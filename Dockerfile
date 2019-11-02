@@ -1,4 +1,4 @@
- FROM ubuntu:18.04
+ FROM ubuntu:18.04@sha256:6e9f67fa63b0323e9a1e587fd71c561ba48a034504fb804fd26fd8800039835d
 
 RUN apt-get update \
         && apt-get install -y curl python git build-essential wget sudo\
