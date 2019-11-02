@@ -1,2 +1,7 @@
-bin/challenge*
-bin/response
+bin
+target
+Enclave_u.*
+Enclave_t.*
+lib
+enclave.so
+libEnclave_u.a
