@@ -96,4 +96,4 @@ RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \
 RUN git clone https://github.com/apache/mesatee-sgx.git /home/user/mesatee-sgx
 
 WORKDIR /home/user/mesatee-sgx/code/build
-ENTRYPOINT . /home/user/.nix-profile/etc/profile.d/nix.sh && nix-shell /home/user/shell.nix make
+ENTRYPOINT . /home/user/.nix-profile/etc/profile.d/nix.sh && nix-shell /home/user/shell.nix --command "make"
