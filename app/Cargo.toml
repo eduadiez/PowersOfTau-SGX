@@ -1,0 +1,22 @@
+[package]
+name = "compute_constrained_sgx"
+version = "1.0.0"
+authors = ["eduadiez"]
+build = "build.rs"
+
+[dependencies]
+sgx_types = { version = "1.0.9", git = "https://github.com/baidu/rust-sgx-sdk.git" }
+sgx_urts = { version = "1.0.9", git = "https://github.com/baidu/rust-sgx-sdk.git" }
+dirs = "1.0.2"
+
+rand = "0.4"
+blake2 = "0.6.1"
+byteorder = "1.1.0"
+bellman_ce = "0.3.1"
+memmap = "0.7.0"
+generic-array = "0.8.3"
+typenum = "1.9.0"
+itertools = "0.8.0"
+num_cpus = "1.7.0"
+crossbeam = "0.3.0"
+
