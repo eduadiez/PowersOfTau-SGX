@@ -93,7 +93,9 @@ RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \
         && nix-shell shell.nix --command " \
         rustup default nightly-2019-08-01"
 
-RUN git clone https://github.com/apache/mesatee-sgx.git /home/user/mesatee-sgx
+RUN git clone https://github.com/apache/mesatee-sgx.git /home/user/mesatee-sgx && \
+        cd /home/user/mesatee-sgx && \
+        git checkout b0817b48489fc49fd687454d9f2cffcdc1c9cdaa
 
 WORKDIR /home/user/mesatee-sgx/code/build
 ENTRYPOINT . /home/user/.nix-profile/etc/profile.d/nix.sh && nix-shell /home/user/shell.nix --command "make"
