@@ -5,12 +5,12 @@ name = "SGXPowersOfTau"
 version = "1.0.0"
 dependencies = [
  "blake2 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)",
- "byteorder 1.3.2 (git+https://github.com/eduadiez/byteorder.git)",
+ "byteorder-sgx 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "pairing_ce 0.19.0 (git+https://github.com/eduadiez/pairing_ce-sgx.git?rev=309dfc6)",
- "sgx_rand 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_tstd 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_types 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "pairing_ce 0.19.0 (git+https://github.com/eduadiez/pairing_ce-sgx.git?rev=1558e43)",
+ "sgx_rand 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_tstd 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_types 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
  "typenum 1.11.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
@@ -36,19 +36,11 @@ version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
-name = "byteorder"
-version = "1.3.2"
-source = "git+https://github.com/eduadiez/byteorder.git#f9812203a43ef753ad4256dbfba4ee644b80be59"
+name = "byteorder-sgx"
+version = "0.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "sgx_tstd 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
-]
-
-[[package]]
-name = "byteorder"
-version = "1.3.2"
-source = "git+https://github.com/eduadiez/byteorder.git?rev=f981220#f9812203a43ef753ad4256dbfba4ee644b80be59"
-dependencies = [
- "sgx_tstd 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_tstd 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -74,21 +66,21 @@ dependencies = [
 ]
 
 [[package]]
-name = "ff_ce"
+name = "ff_ce-sgx"
 version = "0.8.0"
-source = "git+https://github.com/eduadiez/ff_ce-sgx.git?rev=09b1d53#09b1d532327bd7f5d82ddba451abdbb31da42901"
+source = "git+https://github.com/eduadiez/ff_ce-sgx.git?rev=250bd5e#250bd5e52a741b09686c6cb871c5f2b6dbf5d972"
 dependencies = [
- "byteorder 1.3.2 (git+https://github.com/eduadiez/byteorder.git?rev=f981220)",
- "ff_derive_ce 0.6.0 (git+https://github.com/eduadiez/ff_ce-sgx.git?rev=09b1d53)",
+ "byteorder-sgx 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ff_derive_ce 0.6.0 (git+https://github.com/eduadiez/ff_ce-sgx.git?rev=250bd5e)",
  "hex 0.4.0 (git+https://github.com/mesalock-linux/rust-hex-sgx.git?rev=281ecff)",
- "sgx_rand 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_tstd 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_rand 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_tstd 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "ff_derive_ce"
 version = "0.6.0"
-source = "git+https://github.com/eduadiez/ff_ce-sgx.git?rev=09b1d53#09b1d532327bd7f5d82ddba451abdbb31da42901"
+source = "git+https://github.com/eduadiez/ff_ce-sgx.git?rev=250bd5e#250bd5e52a741b09686c6cb871c5f2b6dbf5d972"
 dependencies = [
  "num-bigint 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)",
  "num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -154,12 +146,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "pairing_ce"
 version = "0.19.0"
-source = "git+https://github.com/eduadiez/pairing_ce-sgx.git?rev=309dfc6#309dfc6866d770af3b91a9877ae24201fa063b3a"
+source = "git+https://github.com/eduadiez/pairing_ce-sgx.git?rev=1558e43#1558e43b6ab961155f0d18d8b6230de37ef706c7"
 dependencies = [
- "byteorder 1.3.2 (git+https://github.com/eduadiez/byteorder.git?rev=f981220)",
- "ff_ce 0.8.0 (git+https://github.com/eduadiez/ff_ce-sgx.git?rev=09b1d53)",
- "sgx_rand 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_tstd 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "byteorder-sgx 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ff_ce-sgx 0.8.0 (git+https://github.com/eduadiez/ff_ce-sgx.git?rev=250bd5e)",
+ "sgx_rand 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_tstd 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -181,94 +173,94 @@ dependencies = [
 [[package]]
 name = "sgx_alloc"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "sgx_trts 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_trts 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sgx_backtrace_sys"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "cc 1.0.46 (registry+https://github.com/rust-lang/crates.io-index)",
- "sgx_build_helper 0.1.0 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_libc 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_build_helper 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_libc 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sgx_build_helper"
-version = "0.1.0"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "sgx_demangle"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "sgx_libc"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "sgx_types 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_types 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sgx_rand"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "sgx_trts 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_tstd 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_types 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_trts 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_tstd 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_types 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sgx_tprotected_fs"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "sgx_trts 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_types 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_trts 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_types 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sgx_trts"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "sgx_libc 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_types 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_libc 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_types 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sgx_tstd"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "sgx_alloc 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_backtrace_sys 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_demangle 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_libc 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_tprotected_fs 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_trts 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_types 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_unwind 0.0.1 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_alloc 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_backtrace_sys 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_demangle 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_libc 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_tprotected_fs 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_trts 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_types 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_unwind 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
 name = "sgx_types"
 version = "1.0.9"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "sgx_unwind"
-version = "0.0.1"
-source = "git+https://github.com/baidu/rust-sgx-sdk.git#b0817b48489fc49fd687454d9f2cffcdc1c9cdaa"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
- "sgx_build_helper 0.1.0 (git+https://github.com/baidu/rust-sgx-sdk.git)",
- "sgx_trts 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)",
+ "sgx_build_helper 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "sgx_trts 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -305,13 +297,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum autocfg 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)" = "1d49d90015b3c36167a20fe2810c5cd875ad504b39cff3d4eae7977e6b7c1cb2"
 "checksum blake2 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "94cb07b0da6a73955f8fb85d24c466778e70cda767a568229b104f0264089330"
 "checksum byte-tools 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)" = "e3b5ca7a04898ad4bcd41c90c5285445ff5b791899bb1b0abdd2a2aa791211d7"
-"checksum byteorder 1.3.2 (git+https://github.com/eduadiez/byteorder.git)" = "<none>"
-"checksum byteorder 1.3.2 (git+https://github.com/eduadiez/byteorder.git?rev=f981220)" = "<none>"
+"checksum byteorder-sgx 0.0.1 (registry+https://github.com/rust-lang/crates.io-index)" = "3e255d3f30aa4a2edbb9dc61c9215aae79ea56a34238dbe8653ca07c8adffadb"
 "checksum cc 1.0.46 (registry+https://github.com/rust-lang/crates.io-index)" = "0213d356d3c4ea2c18c40b037c3be23cd639825c18f25ee670ac7813beeef99c"
 "checksum crypto-mac 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)" = "4434400df11d95d556bac068ddfedd482915eb18fe8bea89bc80b6e4b1c179e5"
 "checksum digest 0.8.1 (registry+https://github.com/rust-lang/crates.io-index)" = "f3d0c8c8752312f9713efd397ff63acb9f85585afbf179282e720e7704954dd5"
-"checksum ff_ce 0.8.0 (git+https://github.com/eduadiez/ff_ce-sgx.git?rev=09b1d53)" = "<none>"
-"checksum ff_derive_ce 0.6.0 (git+https://github.com/eduadiez/ff_ce-sgx.git?rev=09b1d53)" = "<none>"
+"checksum ff_ce-sgx 0.8.0 (git+https://github.com/eduadiez/ff_ce-sgx.git?rev=250bd5e)" = "<none>"
+"checksum ff_derive_ce 0.6.0 (git+https://github.com/eduadiez/ff_ce-sgx.git?rev=250bd5e)" = "<none>"
 "checksum generic-array 0.12.3 (registry+https://github.com/rust-lang/crates.io-index)" = "c68f0274ae0e023facc3c97b2e00f076be70e254bc851d972503b328db79b2ec"
 "checksum hex 0.4.0 (git+https://github.com/mesalock-linux/rust-hex-sgx.git?rev=281ecff)" = "<none>"
 "checksum lazy_static 1.4.0 (registry+https://github.com/rust-lang/crates.io-index)" = "e2abad23fbc42b3700f2f279844dc832adb2b2eb069b2df918f455c4e18cc646"
@@ -319,20 +310,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 "checksum num-integer 0.1.41 (registry+https://github.com/rust-lang/crates.io-index)" = "b85e541ef8255f6cf42bbfe4ef361305c6c135d10919ecc26126c4e5ae94bc09"
 "checksum num-traits 0.2.8 (registry+https://github.com/rust-lang/crates.io-index)" = "6ba9a427cfca2be13aa6f6403b0b7e7368fe982bfa16fccc450ce74c46cd9b32"
 "checksum opaque-debug 0.2.3 (registry+https://github.com/rust-lang/crates.io-index)" = "2839e79665f131bdb5782e51f2c6c9599c133c6098982a54c794358bf432529c"
-"checksum pairing_ce 0.19.0 (git+https://github.com/eduadiez/pairing_ce-sgx.git?rev=309dfc6)" = "<none>"
+"checksum pairing_ce 0.19.0 (git+https://github.com/eduadiez/pairing_ce-sgx.git?rev=1558e43)" = "<none>"
 "checksum proc-macro2 1.0.6 (registry+https://github.com/rust-lang/crates.io-index)" = "9c9e470a8dc4aeae2dee2f335e8f533e2d4b347e1434e5671afc49b054592f27"
 "checksum quote 1.0.2 (registry+https://github.com/rust-lang/crates.io-index)" = "053a8c8bcc71fcce321828dc897a98ab9760bef03a4fc36693c231e5b3216cfe"
-"checksum sgx_alloc 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_backtrace_sys 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_build_helper 0.1.0 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_demangle 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_libc 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_rand 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_tprotected_fs 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_trts 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_tstd 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_types 1.0.9 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
-"checksum sgx_unwind 0.0.1 (git+https://github.com/baidu/rust-sgx-sdk.git)" = "<none>"
+"checksum sgx_alloc 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "2ef61c806716973aadd997bb1c7b675afbdc6cf3b29686ca73810cfccc13d3d2"
+"checksum sgx_backtrace_sys 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "b5f4fa2ca0384c60a31cdacdc4c382ac964db2bd96a1a03cf8747a68f10c3376"
+"checksum sgx_build_helper 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)" = "fce1be5114b148d8a613052b1efaea077e84d1f83d64da021355b894c504e6d9"
+"checksum sgx_demangle 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "ba09423914d85733160bc9c51d7600eb88d323e9c83d1cde1766fc94f12930bd"
+"checksum sgx_libc 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "c6b3c46e86f658ce24afcaf5f79efc34abf4118adf7175657f374c916ad945b0"
+"checksum sgx_rand 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "4b910168ce9a12f9c9453c6d75c84a4d7791999591607fef42d78883b69f9996"
+"checksum sgx_tprotected_fs 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "ac62530e3029deeb73667728a32317b306ed9de5e2913b7d630a64df6650dcb0"
+"checksum sgx_trts 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "f7551a4d2cc5aeddd93d6db680ac4666aa21e741d2f39e16545e651b7ffc8b57"
+"checksum sgx_tstd 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "034349e2dba1b9b4fb58f8d1db28a1b32425e19c186ccf1fba8f9b20f471174c"
+"checksum sgx_types 1.0.9 (registry+https://github.com/rust-lang/crates.io-index)" = "ee2c704607803f62caa0763d5219d8eb7d52718c901a9ef510d3b35b28199c10"
+"checksum sgx_unwind 0.0.4 (registry+https://github.com/rust-lang/crates.io-index)" = "8e6bf27f6a269a9fa482d1fe9b013374f60e828d250ebbba2f8c8a38a6cf6230"
 "checksum spin 0.5.2 (registry+https://github.com/rust-lang/crates.io-index)" = "6e63cff320ae2c57904679ba7cb63280a3dc4613885beafb148ee7bf9aa9042d"
 "checksum subtle 1.0.0 (registry+https://github.com/rust-lang/crates.io-index)" = "2d67a5a62ba6e01cb2192ff309324cb4875d0c451d55fe2319433abe7a05a8ee"
 "checksum syn 1.0.7 (registry+https://github.com/rust-lang/crates.io-index)" = "0e7bedb3320d0f3035594b0b723c8a28d7d336a3eda3881db79e61d676fb644c"
