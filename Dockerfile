@@ -1,4 +1,9 @@
- FROM ubuntu:18.04@sha256:6e9f67fa63b0323e9a1e587fd71c561ba48a034504fb804fd26fd8800039835d
+FROM ubuntu:18.04@sha256:6e9f67fa63b0323e9a1e587fd71c561ba48a034504fb804fd26fd8800039835d
+
+ENV MESATEE_SGX_COMMIT 2042ce64fd377e790584c96a4bfd4c32de2d03ea
+ENV RUST_VERSION nightly-2019-08-01
+ENV SGX_TAG sgx_2.6
+ENV SGX_BIN sgx_linux_x64_sdk_2.6.100.51363.bin
 
 RUN apt-get update \
         && apt-get install -y curl python git build-essential wget sudo\
@@ -15,7 +20,7 @@ USER user
 ENV USER user
 WORKDIR /home/user
 
-RUN git clone -b sgx_2.6 https://github.com/intel/linux-sgx.git /home/user/linux-sgx && \
+RUN git clone -b ${SGX_TAG} https://github.com/intel/linux-sgx.git /home/user/linux-sgx && \
 	cd /home/user/linux-sgx && \
 	make dcap_source && \
 	./download_prebuilt.sh
@@ -77,7 +82,6 @@ RUN touch .bash_profile \
 && nix-env -i /nix/store/hjn55shjnsmnv35vcl91brf7jx0mlbjg-protobuf-3.10.0 \
 && nix-env -i /nix/store/zsfayw1hr64lz0j1na8jsiv5dznzlll9-rustup-1.20.2
 
-
 #config nix-shell
 RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \
 && nix-shell
@@ -87,15 +91,14 @@ RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \
         cd /home/user/linux-sgx/sdk && \
         make && \
         /home/user/linux-sgx/linux/installer/bin/build-installpkg.sh sdk && \
-        sudo /home/user/linux-sgx/linux/installer/bin/sgx_linux_x64_sdk_2.6.100.51363.bin --prefix=/opt/intel"
+        sudo /home/user/linux-sgx/linux/installer/bin/${SGX_BIN} --prefix=/opt/intel"
 
 RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \ 
-        && nix-shell shell.nix --command " \
-        rustup default nightly-2019-08-01"
+        && nix-shell shell.nix --command "rustup default ${RUST_VERSION}"
 
 RUN git clone https://github.com/apache/mesatee-sgx.git /home/user/mesatee-sgx && \
         cd /home/user/mesatee-sgx && \
-        git checkout b0817b48489fc49fd687454d9f2cffcdc1c9cdaa
+        git checkout ${MESATEE_SGX_COMMIT}
 
 WORKDIR /home/user/mesatee-sgx/code/build
-ENTRYPOINT . /home/user/.nix-profile/etc/profile.d/nix.sh && nix-shell /home/user/shell.nix --command "make"
+ENTRYPOINT . /home/user/.nix-profile/etc/profile.d/nix.sh && nix-shell /home/user/shell.nix make
