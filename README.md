@@ -5,7 +5,7 @@ $ git https://github.com/eduadiez/PowersOfTau-SGX.git
 $ cd PowersOfTau-SGX
 
 # Build the docker image  
-$ docker build -t powersoftau .
+$ docker build -t powersoftau docker
 
 # Build the binary
 $ docker run --rm -v $PWD:/home/user/mesatee-sgx/code/build powersoftau
