@@ -1,5 +1,0 @@
-FROM sebvaucher/sgx-base:sgx_2.5
-
-WORKDIR /app
-
-CMD ["./compute_constrained_sgx"]

@@ -4,9 +4,11 @@ ENV MESATEE_SGX_COMMIT 2042ce64fd377e790584c96a4bfd4c32de2d03ea
 ENV RUST_VERSION nightly-2019-08-01
 ENV SGX_TAG sgx_2.6
 ENV SGX_BIN sgx_linux_x64_sdk_2.6.100.51363.bin
+ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update \
-        && apt-get install -y curl python git build-essential wget sudo\
+        && apt-get install -y curl python git build-essential wget sudo \
+        && apt-get install -y ocaml ocamlbuild automake autoconf libtool libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev kmod vim curl git-core libprotobuf-c0-dev libboost-thread-dev libboost-system-dev liblog4cpp5-dev libjsoncpp-dev alien uuid-dev libxml2-dev cmake pkg-config expect systemd-sysv gdb \
         && mkdir -p /nix /etc/nix \
         && chmod a+rwx /nix \
         && echo 'sandbox = false' > /etc/nix/nix.conf \
@@ -92,6 +94,22 @@ RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \
         make && \
         /home/user/linux-sgx/linux/installer/bin/build-installpkg.sh sdk && \
         sudo /home/user/linux-sgx/linux/installer/bin/${SGX_BIN} --prefix=/opt/intel"
+
+ENV psw_deb https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server/libsgx-enclave-common_2.6.100.51363-bionic1_amd64.deb
+ENV psw_dev_deb https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server/libsgx-enclave-common-dev_2.6.100.51363-bionic1_amd64.deb
+ENV psw_dbgsym_deb https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server/libsgx-enclave-common-dbgsym_2.6.100.51363-bionic1_amd64.ddeb
+
+RUN mkdir /home/user/sgx && \
+    sudo mkdir /etc/init && \
+    wget -O /home/user/psw.deb ${psw_deb} && \
+    wget -O /home/user/psw_dev.deb ${psw_dev_deb} && \
+    wget -O /home/user/psw_dbgsym.deb ${psw_dbgsym_deb} && \
+    cd /home/user && \
+    sudo dpkg -i /home/user/psw.deb && \
+    sudo dpkg -i /home/user/psw_dev.deb && \
+    sudo dpkg -i /home/user/psw_dbgsym.deb && \
+    echo 'source /opt/intel/sgxsdk/environment' >> /home/user/.bashrc && \
+    rm -rf /home/user/sgx/*
 
 RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \ 
         && nix-shell shell.nix --command "rustup default ${RUST_VERSION}"
