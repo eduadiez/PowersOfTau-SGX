@@ -143,6 +143,7 @@ $(App_Name_Path): $(App_Enclave_u_Object) $(App_SRC_Files)
 	@echo "Cargo  =>  $@"
 	mkdir -p bin
 	cp $(App_Rust_Path)/$(App_Name) ./bin
+	patchelf --set-interpreter /lib64/ld-linux-x86-64.so.2 ./bin/$(App_Name)
 
 ######## Enclave Objects ########
 
