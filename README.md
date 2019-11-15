@@ -2,7 +2,7 @@
 
 - [ ] Remove deprecated launch token
 - [ ] Add more comments to the modifications
-- [ ] Make the build reproducible
+- [x] Make the build reproducible
 - [ ] Generate a release binary 
 - [ ] Sign the binary with an SGX license (0KIMS) to be able to run it on release mode
 - [ ] Generate an attestation proof inside the enclave (Intel SGX verificable)
