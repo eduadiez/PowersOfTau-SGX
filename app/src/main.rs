@@ -48,6 +48,8 @@ extern crate bellman_ce;
 extern crate generic_array;
 
 use memmap::*;
+use std::slice;
+
 use std::fs::OpenOptions;
 use keypair::PublicKey;    
 
@@ -73,6 +75,78 @@ extern {
     fn init_keypair(eid: sgx_enclave_id_t, retval: *mut sgx_status_t, digest: &u8) -> sgx_status_t;
     fn clean_keypair(eid: sgx_enclave_id_t, retval: *mut sgx_status_t) -> sgx_status_t;
     fn get_public_key(eid: sgx_enclave_id_t, retval: *mut sgx_status_t, pubkey: &mut u8) -> sgx_status_t;
+}
+
+#[no_mangle]
+pub extern "C"
+fn ocall_sgx_init_quote(ret_ti: *mut sgx_target_info_t,
+                        ret_gid : *mut sgx_epid_group_id_t) -> sgx_status_t {
+    println!("Entering ocall_sgx_init_quote...");
+    unsafe {sgx_init_quote(ret_ti, ret_gid)}
+}
+
+
+#[no_mangle]
+pub extern "C"
+fn ocall_get_quote (p_sigrl            : *const u8,
+                    sigrl_len          : u32,
+                    p_report           : *const sgx_report_t,
+                    quote_type         : sgx_quote_sign_type_t,
+                    p_spid             : *const sgx_spid_t,
+                    p_nonce            : *const sgx_quote_nonce_t,
+                    p_qe_report        : *mut sgx_report_t,
+                    p_quote            : *mut u8,
+                    _maxlen            : u32,
+                    p_quote_len        : *mut u32) -> sgx_status_t {
+    println!("Entering ocall_get_quote");
+
+    let mut real_quote_len : u32 = 0;
+
+    let ret = unsafe {
+        sgx_calc_quote_size(p_sigrl, sigrl_len, &mut real_quote_len as *mut u32)
+    };
+
+    if ret != sgx_status_t::SGX_SUCCESS {
+        println!("sgx_calc_quote_size returned {}", ret);
+        return ret;
+    }
+
+    unsafe { *p_quote_len = real_quote_len; }
+
+    let ret = unsafe {
+        sgx_get_quote(p_report,
+                      quote_type,
+                      p_spid,
+                      p_nonce,
+                      p_sigrl,
+                      sigrl_len,
+                      p_qe_report,
+                      p_quote as *mut sgx_quote_t,
+                      real_quote_len)
+    };
+
+    if ret != sgx_status_t::SGX_SUCCESS {
+        println!("sgx_calc_quote_size returned {}", ret);
+        return ret;
+    }
+    
+    let quote_vec = unsafe { slice::from_raw_parts(p_quote, real_quote_len as usize)};
+    let mut file = fs::File::create("quote.bin").unwrap();
+    // Write a slice of bytes to the file
+    file.write_all(&quote_vec).expect("unable to write");
+    file = fs::File::create("quote.json").unwrap();
+    //https://api.trustedservices.intel.com/documents/sgx-attestation-api-spec.pdf
+    /*
+        curl -i -X POST \
+        https://api.trustedservices.intel.com/sgx/dev/attestation/v3/report \
+        -H 'Content-Type: application/json' \
+        -H 'Ocp-Apim-Subscription-Key: bc6ef22000ff41aca23ee0469c988821' \
+        -d @quote.json
+    */
+
+    let encoded_json = format!("{{\"isvEnclaveQuote\":\"{}\"}}\r\n", base64::encode(&quote_vec));
+    file.write_all(encoded_json.as_bytes()).expect("unable to write");
+    ret
 }
 
 fn init_enclave() -> SgxResult<SgxEnclave> {
@@ -200,7 +274,7 @@ fn main() {
     writer.set_len(required_output_length as u64).expect("must make output file large enough");
 
     let mut writable_map = unsafe { MmapOptions::new().map_mut(&writer).expect("unable to create a memory map for output") };
-    
+
     println!("Calculating previous contribution hash...");
 
     assert!(UseCompression::No == INPUT_IS_COMPRESSED, "Hashing the compressed file in not yet defined");
