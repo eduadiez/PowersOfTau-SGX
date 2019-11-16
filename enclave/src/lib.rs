@@ -36,7 +36,9 @@ extern crate sgx_types;
 #[cfg(not(target_env = "sgx"))]
 #[macro_use]
 extern crate sgx_tstd as std;
-
+extern crate sgx_tse;
+extern crate sgx_tcrypto;
+use sgx_tcrypto::rsgx_sha256_slice;
 use sgx_types::*;
 
 #[macro_use]
@@ -44,9 +46,27 @@ extern crate lazy_static;
 use std::sync::SgxMutex;
 use pairing::bn256::Bn256;
 
+extern "C" {
+    pub fn ocall_sgx_init_quote ( ret_val : *mut sgx_status_t,
+                  ret_ti  : *mut sgx_target_info_t,
+                  ret_gid : *mut sgx_epid_group_id_t) -> sgx_status_t;
+    pub fn ocall_get_quote (ret_val            : *mut sgx_status_t,
+                p_sigrl            : *const u8,
+                sigrl_len          : u32,
+                p_report           : *const sgx_report_t,
+                quote_type         : sgx_quote_sign_type_t,
+                p_spid             : *const sgx_spid_t,
+                p_nonce            : *const sgx_quote_nonce_t,
+                p_qe_report        : *mut sgx_report_t,
+                p_quote            : *mut u8,
+                maxlen             : u32,
+                p_quote_len        : *mut u32) -> sgx_status_t;
+}
+
 lazy_static!{
     static ref KEYSTORE: SgxMutex<Keystore<Bn256>> = SgxMutex::new(Keystore::<Bn256>::new());
 }
+static SPID: [u8; 16] = [131, 148, 124, 118, 73, 75, 241, 31, 177, 161, 82, 107, 137, 215, 90, 37]; // DEV: 83947C76494BF11FB1A1526B89D75A25
 
 extern crate pairing;
 pub mod keystore;
@@ -66,9 +86,7 @@ use keypair::PublicKey;
 use keypair::PrivateKey;
 extern crate typenum;
 use typenum::consts::U64;
-use pairing::ff::PrimeField;
 use pairing::CurveProjective;
-use pairing::EncodedPoint;
 use pairing::CurveAffine;
 use utils::hash_to_g2;
 extern crate byteorder;
@@ -77,6 +95,10 @@ use pairing::ff::Field;
 use byteorder::BigEndian;
 use byteorder::ReadBytesExt;
 use blake2::digest::generic_array::GenericArray;
+use std::string::String;
+use sgx_tse::rsgx_create_report;
+use sgx_tse::rsgx_verify_report;
+use std::ptr;
 
 #[repr(C)]
 pub enum ExpKey{
@@ -104,7 +126,6 @@ pub extern "C" fn init_keypair(digest: &GenericArray<u8, U64>) -> sgx_status_t {
             }
 
             // Ask the user to provide some information for additional entropy
-            use std::string::String;
             let mut user_input = String::new();
             println!("Type some random text and press [ENTER] to provide additional entropy...");
             std::io::stdin().read_line(&mut user_input).expect("expected to read some random text from the user");
@@ -217,6 +238,35 @@ fn gen_keypair<R: Rng, E: Engine>(rng: &mut R, digest: &[u8]) -> Keystore::<E> {
     let pk_alpha = op(alpha, 1);
     let pk_beta = op(beta, 2);
 
+
+    // Generate the attestation proof
+    let pbk_slice = [
+        (pk_tau.0).0.into_uncompressed().as_ref(),
+        (pk_tau.0).1.into_uncompressed().as_ref(),
+        (pk_alpha.0).0.into_uncompressed().as_ref(),
+        (pk_alpha.0).1.into_uncompressed().as_ref(),
+        (pk_beta.0).0.into_uncompressed().as_ref(),
+        (pk_beta.0).1.into_uncompressed().as_ref(),
+        (pk_tau.1).into_uncompressed().as_ref(),   
+        (pk_alpha.1).into_uncompressed().as_ref(),
+        (pk_beta.1).into_uncompressed().as_ref(),
+        ].concat();
+    
+    let pbk_slice_hash = rsgx_sha256_slice(&hex::encode(&pbk_slice)[..].as_bytes()).unwrap();
+    let digest_hash = rsgx_sha256_slice(&hex::encode(&digest)[..].as_bytes()).unwrap();
+    let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
+    report_data.d[..32].clone_from_slice(&pbk_slice_hash);
+    report_data.d[32..].clone_from_slice(&digest_hash);
+
+    let sign_type = sgx_quote_sign_type_t::SGX_UNLINKABLE_SIGNATURE;
+    match create_attestation_report(sign_type, report_data) {
+        Ok(r) => r,
+        Err(e) => {
+            println!("Error in create_attestation_report: {:?}", e);
+            return Keystore::new();
+        }
+    };
+
     Keystore{
         public_key: PublicKey {
             tau_g1: pk_tau.0,
@@ -234,66 +284,149 @@ fn gen_keypair<R: Rng, E: Engine>(rng: &mut R, digest: &[u8]) -> Keystore::<E> {
     }
 }
 
-/// Constructs a keypair given an RNG and a 64-byte transcript `digest`.
-#[allow(dead_code)]
-fn gen_keypair_deterministic<R: Rng, E: Engine>(_rng: &mut R, digest: &[u8]) -> Keystore::<E> {                    
-    let tau = E::Fr::from_str("3835875312103070575654265771596533008994514025075239231195226282228457796408").unwrap();
-    let alpha = E::Fr::from_str("21109449771018384494667264035729244018277451011524402520704046758348909735302").unwrap();
-    let beta = E::Fr::from_str("18583422331330714657970793113818210303531653358343133009054090376308424313344").unwrap();
+#[allow(const_err)]
+pub fn create_attestation_report(sign_type: sgx_quote_sign_type_t, report_data: sgx_report_data_t) -> Result<(), sgx_status_t> {
 
-    let op = |x: E::Fr, personalization: u8| {
-        // Sample random g^s
-        let uncompressed = [17, 34, 206, 181, 66, 140, 192, 207, 211, 44, 1, 160, 184, 211, 3, 185, 22, 171, 68, 213, 219, 148, 126, 247, 106, 62, 31, 28, 101, 253, 204, 132, 23, 160, 99, 52, 152, 20, 207, 121, 176, 0, 252, 253, 228, 140, 27, 219, 239, 171, 212, 19, 173, 22, 39, 37, 40, 227, 136, 119, 231, 199, 121, 33];       
-    
-        let mut repr = <E::G1Affine as pairing::CurveAffine>::Uncompressed::empty();
-        use std::io::Write;
-        repr.as_mut().write(&uncompressed).expect("A panic message to be displayed");
-        let g1_s = repr.into_affine().unwrap();
-        // Compute g^{s*x}
-        let g1_s_x = g1_s.mul(x).into_affine();
+    // Workflow:
+    // (1) ocall to get the target_info structure (ti) and epid group id (eg)
+    // (1.5) get sigrl
+    // (2) call sgx_create_report with ti+data, produce an sgx_report_t
+    // (3) ocall to sgx_get_quote to generate (*mut sgx-quote_t, uint32_t)
 
-        // Compute BLAKE2b(personalization | transcript | g^s | g^{s*x})
-        let h: blake2::digest::generic_array::GenericArray<u8, U64> = {
-            let mut h = Blake2b::default();
-            h.input(&[personalization]);
-            h.input(digest);
-            h.input(g1_s.into_uncompressed().as_ref());
-            h.input(g1_s_x.into_uncompressed().as_ref());
-            h.result()
-        };
+    // (1) get ti + eg
+    let mut ti : sgx_target_info_t = sgx_target_info_t::default();
+    let mut eg : sgx_epid_group_id_t = sgx_epid_group_id_t::default();
+    let mut rt : sgx_status_t = sgx_status_t::SGX_ERROR_UNEXPECTED;
 
-        println!("h_digest: {:x}",h);
-
-        // Hash into G2 as g^{s'}   
-        let uncompressed_2 = [13, 181, 227, 135, 177, 86, 64, 17, 156, 13, 165, 76, 159, 121, 166, 87, 6, 120, 176, 83, 121, 55, 146, 128, 83, 248, 177, 184, 62, 199, 254, 123, 48, 56, 24, 63, 213, 81, 56, 180, 175, 112, 149, 154, 191, 78, 229, 54, 111, 94, 102, 49, 129, 84, 71, 76, 164, 232, 145, 16, 44, 178, 201, 200, 40, 212, 101, 208, 150, 117, 16, 229, 138, 193, 35, 77, 26, 55, 231, 190, 154, 181, 48, 44, 172, 187, 160, 151, 237, 225, 157, 233, 63, 129, 251, 232, 42, 16, 16, 255, 42, 178, 119, 128, 247, 183, 103, 22, 9, 228, 145, 207, 32, 83, 246, 103, 209, 74, 232, 253, 74, 156, 25, 230, 66, 87, 15, 6];
-        let mut repr_2 = <<E as pairing::Engine>::G2Affine as pairing::CurveAffine>::Uncompressed::empty();
-        repr_2.as_mut().write(&uncompressed_2).expect("A panic message to be displayed");
-        let g2_s = repr_2.into_affine().unwrap();
-        
-        // Compute g^{s'*x}
-        let g2_s_x = g2_s.mul(x).into_affine();
-
-        ((g1_s, g1_s_x), g2_s_x)
+    let res = unsafe {
+        ocall_sgx_init_quote(&mut rt as *mut sgx_status_t,
+                             &mut ti as *mut sgx_target_info_t,
+                             &mut eg as *mut sgx_epid_group_id_t)
     };
    
-
-    let pk_tau = op(tau,0);
-    let pk_alpha = op(alpha,1);
-    let pk_beta = op(beta,2);
-
-    Keystore{
-        public_key: PublicKey {
-            tau_g1: pk_tau.0,
-            alpha_g1: pk_alpha.0,
-            beta_g1: pk_beta.0,
-            tau_g2: pk_tau.1,
-            alpha_g2: pk_alpha.1,
-            beta_g2: pk_beta.1,
-        },
-        private_key: PrivateKey {
-            tau: tau,
-            alpha: alpha,
-            beta: beta
-        }
+    if res != sgx_status_t::SGX_SUCCESS {
+        return Err(res);
     }
-}
+
+    if rt != sgx_status_t::SGX_SUCCESS {
+        return Err(rt);
+    }
+
+    let rep = match rsgx_create_report(&ti, &report_data) {
+        Ok(r) =>{
+            println!("Report creation => success");
+            Some(r)
+        },
+        Err(e) =>{
+            println!("Report creation => failed {:?}", e);
+            None
+        },
+    };
+
+    let mut quote_nonce = sgx_quote_nonce_t { rand : [0;16] };
+    let mut os_rng = os::SgxRng::new().unwrap();
+    os_rng.fill_bytes(&mut quote_nonce.rand);
+    let mut qe_report = sgx_report_t::default();
+    const RET_QUOTE_BUF_LEN : u32 = 2048;
+    let mut return_quote_buf : [u8; RET_QUOTE_BUF_LEN as usize] = [0;RET_QUOTE_BUF_LEN as usize];
+    let mut quote_len : u32 = 0;
+    
+    let (p_sigrl, sigrl_len) = (ptr::null(), 0);
+
+    // (3) Generate the quote
+    // Args:
+    //       1. sigrl: ptr + len
+    //       2. report: ptr 432bytes
+    //       3. linkable: u32, unlinkable=0, linkable=1
+    //       4. spid: sgx_spid_t ptr 16bytes
+    //       5. sgx_quote_nonce_t ptr 16bytes
+    //       6. p_sig_rl + sigrl size ( same to sigrl)
+    //       7. [out]p_qe_report need further check
+    //       8. [out]p_quote
+    //       9. quote_size
+    /*
+    let (p_sigrl, sigrl_len) =
+        if sigrl_vec.len() == 0 {
+            (ptr::null(), 0)
+        } else {
+            (sigrl_vec.as_ptr(), sigrl_vec.len() as u32)
+        };
+    */
+    let p_report = (&rep.unwrap()) as * const sgx_report_t;
+    let quote_type = sign_type;
+
+    let mut spid : sgx_spid_t = sgx_spid_t::default();
+    spid.id = SPID;
+
+    let p_spid = &spid as *const sgx_spid_t;
+    let p_nonce = &quote_nonce as * const sgx_quote_nonce_t;
+    let p_qe_report = &mut qe_report as *mut sgx_report_t;
+    let p_quote = return_quote_buf.as_mut_ptr();
+    let maxlen = RET_QUOTE_BUF_LEN;
+    let p_quote_len = &mut quote_len as *mut u32;
+
+    let result = unsafe {
+        ocall_get_quote(&mut rt as *mut sgx_status_t,
+                p_sigrl,
+                sigrl_len,
+                p_report,
+                quote_type,
+                p_spid,
+                p_nonce,
+                p_qe_report,
+                p_quote,
+                maxlen,
+                p_quote_len)
+    };
+
+    if result != sgx_status_t::SGX_SUCCESS {
+        return Err(result);
+    }
+
+    if rt != sgx_status_t::SGX_SUCCESS {
+        println!("ocall_get_quote returned {}", rt);
+        return Err(rt);
+    }
+
+    // Perform a check on qe_report to verify if the qe_report is valid
+    match rsgx_verify_report(&qe_report) {
+        Ok(()) => println!("rsgx_verify_report passed!"),
+        Err(x) => {
+            println!("rsgx_verify_report failed with {:?}", x);
+            return Err(x);
+        },
+    }
+
+    // Check if the qe_report is produced on the same platform
+    if ti.mr_enclave.m != qe_report.body.mr_enclave.m ||
+       ti.attributes.flags != qe_report.body.attributes.flags ||
+       ti.attributes.xfrm  != qe_report.body.attributes.xfrm {
+        println!("qe_report does not match current target_info!");
+        return Err(sgx_status_t::SGX_ERROR_UNEXPECTED);
+    }
+
+    println!("qe_report check passed");
+
+    // Check qe_report to defend against replay attack
+    // The purpose of p_qe_report is for the ISV enclave to confirm the QUOTE
+    // it received is not modified by the untrusted SW stack, and not a replay.
+    // The implementation in QE is to generate a REPORT targeting the ISV
+    // enclave (target info from p_report) , with the lower 32Bytes in
+    // report.data = SHA256(p_nonce||p_quote). The ISV enclave can verify the
+    // p_qe_report and report.data to confirm the QUOTE has not be modified and
+    // is not a replay. It is optional.
+    let mut rhs_vec : Vec<u8> = quote_nonce.rand.to_vec();
+    rhs_vec.extend(&return_quote_buf[..quote_len as usize]);
+    let rhs_hash = rsgx_sha256_slice(&rhs_vec[..]).unwrap();
+    let lhs_hash = &qe_report.body.report_data.d[..32];
+
+    if rhs_hash != lhs_hash {
+        println!("Quote is tampered!");
+        return Err(sgx_status_t::SGX_ERROR_UNEXPECTED);
+    }
+
+    if rt != sgx_status_t::SGX_SUCCESS {
+        return Err(rt);
+    }
+    Ok(())
+}       

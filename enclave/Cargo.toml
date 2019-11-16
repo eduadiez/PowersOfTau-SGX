@@ -14,9 +14,12 @@ default = []
 sgx_tstd = { version = "1.0.9" }
 sgx_rand = { version = "1.0.9" }
 sgx_types = { version = "1.0.9" }
+sgx_tcrypto = { version = "1.0.9" }
+sgx_tse     = { version = "1.0.9" } 
 pairing = { package = "pairing_ce", git = "https://github.com/eduadiez/pairing_ce-sgx.git", rev="1558e43"}
 byteorder = { package = "byteorder-sgx", version = "0.0.1" }
 
 lazy_static = { version = "1.1.0", features = ["spin_no_std"] }
 blake2 = { version = "0.8", default-features = false }
 typenum = { version = "1.11.2", features = ["no_std"] } 
+hex = { version = "0.4.0", default-features = false }
