@@ -7,6 +7,8 @@
 - [ ] Sign the binary with an SGX license (0KIMS) to be able to run it on release mode
 - [x] Generate an attestation proof inside the enclave (Intel SGX verificable)
 - [ ] Improve README.md and instructions
+- [ ] Write a verification tool
+- [ ] Add SGX installation instructions
 - [ ] Write a Medium post explaining all the steps and implications
 
 # Clon the repo
