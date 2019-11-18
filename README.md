@@ -1,3 +1,5 @@
+This work is based on the perpetualpowersoftau from [here](https://github.com/weijiekoh/perpetualpowersoftau)
+
 # Pending tasks
 
 - [ ] Remove deprecated launch token
@@ -8,39 +10,93 @@
 - [x] Generate an attestation proof inside the enclave (Intel SGX verificable)
 - [ ] Improve README.md and instructions
 - [ ] Write a verification tool
-- [ ] Add SGX installation instructions
+- [x] Add SGX installation instructions
 - [ ] Write a Medium post explaining all the steps and implications
 
-# Clon the repo
+# Instructions
+
+1. [Check SGX compatibility](https://github.com/eduadiez/PowersOfTau-SGX#check-sgx-compatibility)  (If it isn't compatible you can only run you can only run it in simulation mode)
+2. [Check it SGX is enable](https://github.com/intel/sgx-software-enable)
+3. Download the [binary]() and the [enclave]()
+4. Download the [challenge_nnnn](https://github.com/weijiekoh/perpetualpowersoftau) file from the coordinator . The filename might be something like challenge_0004. Rename it to challenge:
+```
+mv challenge_nnnn challenge
+```
+5. Run the computation with challenge in your working directory:
+```
+./compute_constrained_sgx
+```
+You will see this prompt:
+```
+Will contribute to accumulator for 2^28 powers of tau
+In total will generate up to 536870912 powers
+Type some random text and press [ENTER] to provide additional entropy...
+```
+Make sure that it says 2^28 powers of tau, and then enter random text as prompted.
+
+The compuation will run for about 24 hours on a fast machine. Please try your best to avoid electronic surveillance or tampering during this time.
+
+When it is done, you will see something like this:
+```
+Finihsing writing your contribution to `./response`...
+Done!
+
+Your contribution has been written to `./response`
+
+The BLAKE2b hash of `./response` is:
+        12345678 90123456 78901234 56789012 
+        12345678 90123456 78901234 56789012 
+        0b5337cd bb05970d 4045a88e 55fe5b1d 
+        507f5f0e 5c87d756 85b487ed 89a6fb50 
+Thank you for your participation, much appreciated! :)
+```
+
+You also get two more files `quote.json` and `quote.bin` you can validated following this [instructions](https://github.com/eduadiez/PowersOfTau-SGX#check-the-generated-quote)
+
+As a summary, you can obtain proof signed by Intel that you have generated this response with its corresponding public key within the enclave and that it has been executed in a correct environment.
+
+You should follow https://github.com/weijiekoh/perpetualpowersoftau
+
+# How to build it to verify the binary
+
+## Clon the repo
 ```
 $ git https://github.com/eduadiez/PowersOfTau-SGX.git
 $ cd PowersOfTau-SGX
 ```
 
-# Build the docker image  
+## Build the docker image  
 ```
 $ docker build -t powersoftau docker
 ```
 
-# Build the binary
+## Build the binary
+### HW Mode
 ```
 $ chmod a+w -R .
 $ docker run --rm -ti -v $PWD:/home/user/mesatee-sgx/code/build powersoftau make
 ```
 
-# Build the binary (SIM MODE)
+### SW Mode
 ```
 $ chmod a+w -R .
 $ docker run --rm -ti -v $PWD:/home/user/mesatee-sgx/code/build powersoftau SGX_MODE=SW make
 ```
 
-# Check the result:
+# Check the result *(Pending to update to the latest build)*
 ```
 $ docker run --rm -ti -v $PWD:/home/user/mesatee-sgx/code/build powersoftau md5sum bin/*
 SGX build enviroment
 2264709bba34069da8fb1e0d94f4c6db  bin/compute_constrained_sgx
 773970b269c602ad51010906179f12ff  bin/enclave.signed.so
+$ sgx_sign dump -enclave enclave.signed.so -dumpfile metadata_info.txt
+$ cat metadata_info.txt | grep -A 2 hash
+metadata->enclave_css.body.enclave_hash.m:
+0x00 0x6e 0x7f 0x3d 0x1b 0xf2 0x72 0xb6 0x13 0xa2 0x07 0x4d 0x3e 0xc7 0xe7 0xa8 
+0xb5 0x63 0x4c 0x28 0x21 0xb3 0xbc 0x2d 0xa9 0xd9 0x84 0x64 0x7d 0xef 0xe1 0x3
 ```
+
+This enclave_hash must match with mr_enclave on the qoute.bin
 
 # Clean the results:
 ```
@@ -59,13 +115,14 @@ $ docker run --device /dev/isgx --device /dev/mei0 -v $PWD/bin:/home/user/mesate
 $ chmod +x ./bin/compute_constrained_sgx
 $ docker run -v $PWD/bin:/home/user/mesatee-sgx/code/build -ti powersoftau "./compute_constrained_sgx"
 ```
-## Without docker
+
+### Without docker (you should have de intel sgx drivers installed)
 ```
 $ chmod +x ./bin/compute_constrained_sgx
 $ cd bin && ./compute_constrained_sgx
 ```
 
-# Check the quote
+# Check the generated quote
 ## Intel
 ```
 curl -i -X POST \
@@ -85,11 +142,13 @@ Date: Sat, 16 Nov 2019 17:23:27 GMT
 
 {"id":"221964965504293408825451095104791908906","timestamp":"2019-11-16T17:23:27.854380","version":3,"isvEnclaveQuoteStatus":"OK","isvEnclaveQuoteBody":"AgAAAFwLAAAIAAcAAAAAAIOUfHZJS/EfsaFSa4nXWiXHSjFurU+LCogpHEgqUkWLBgb//wECAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABwAAAAAAAAAHAAAAAAAAAHR5UrjjIKIzjqVb/OfIKNEdQh5whWOzH+IeoolHLih8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACD1xnnferKFHD2uvYqTXdDA8iZ22kCD5xw7h38CMfOngAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAKDtAp0EV+vfEjzDtMirTOyKEBGHlQaC1c5mlXbuBImA1NrRG8Uaj+DJnfNC5cpI4LZKsLVHXxaYt9oThv7+3q"}
 ```
+
 ## SGX-fun 
 https://github.com/kudelskisecurity/sgxfun
 ```
 # Get the public key from the response
 $ xxd  -s 393312 -ps -c 1000 response 
+
 # Get the sha256 hash of public key from the response
 $ shasum -a 256 <(xxd  -s 393312 -ps response | tr -d \\n )
 
@@ -128,4 +187,68 @@ $ ./sgxfun/parse_quote.py quote.bin
            mode64bit    True
         provisionkey    False
        einittokenkey    False
+```
+
+The first part of the report_data must be equal to the hash of the public key used to generate the parameters, the second part its sha256 hash of the challange used.
+
+# Check SGX compatibility 
+
+[SGX-hardware](https://github.com/ayeks/SGX-hardware)
+
+```
+$ git clone https://github.com/ayeks/SGX-hardware
+$ gcc test-sgx.c -o test-sgx
+$ ./test-sgx
+```
+### SGX is available for your CPU but not enabled in BIOS
+```
+...
+Extended feature bits (EAX=07H, ECX=0H)
+eax: 0 ebx: 29c6fbf ecx: 0 edx: 0
+sgx available: 1
+
+CPUID Leaf 12H, Sub-Leaf 0 of Intel SGX Capabilities (EAX=12H,ECX=0)
+eax: 0 ebx: 0 ecx: 0 edx: 0
+sgx 1 supported: 0
+sgx 2 supported: 0
+MaxEnclaveSize_Not64: 0
+MaxEnclaveSize_64: 0
+...
+```
+
+You will need to enable it in the bios or through software.
+
+[sgx-software-enable](https://github.com/intel/sgx-software-enable)
+
+
+### CPU SGX functions are deactivated or SGX is not supported
+```
+...
+Extended feature bits (EAX=07H, ECX=0H)
+eax: 0 ebx: d19f4fbb ecx: 8 edx: 0
+sgx available: 0
+
+CPUID Leaf 12H, Sub-Leaf 0 of Intel SGX Capabilities (EAX=12H,ECX=0)
+eax: 2ff ebx: a80 ecx: a88 edx: 0
+sgx 1 supported: 1
+sgx 2 supported: 1
+MaxEnclaveSize_Not64: 0
+MaxEnclaveSize_64: 0
+...
+```
+
+### SGX is available for your CPU and enabled in BIOS
+```
+...
+Extended feature bits (EAX=07H, ECX=0H)
+eax: 0 ebx: 29c6fbf ecx: 0 edx: 0
+sgx available: 1
+
+CPUID Leaf 12H, Sub-Leaf 0 of Intel SGX Capabilities (EAX=12H,ECX=0)
+eax: 1 ebx: 0 ecx: 0 edx: 241f
+sgx 1 supported: 1
+sgx 2 supported: 0
+MaxEnclaveSize_Not64: 1f
+MaxEnclaveSize_64: 24
+...
 ```
