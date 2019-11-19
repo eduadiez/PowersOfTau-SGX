@@ -2,7 +2,7 @@ This work is based on the perpetualpowersoftau from [here](https://github.com/we
 
 # Pending tasks
 
-- [ ] Remove deprecated launch token
+- [x] Remove deprecated launch token
 - [ ] Add more comments to the modifications
 - [x] Make the build reproducible
 - [ ] Generate a release binary 

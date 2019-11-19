@@ -7,7 +7,6 @@ build = "build.rs"
 [dependencies]
 sgx_types = { version = "1.0.9" }
 sgx_urts = { version = "1.0.9" }
-dirs = "1.0.2"
 
 rand = "0.4"
 blake2 = "0.6.1"

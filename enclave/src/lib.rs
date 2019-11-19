@@ -314,11 +314,11 @@ pub fn create_attestation_report(sign_type: sgx_quote_sign_type_t, report_data: 
 
     let rep = match rsgx_create_report(&ti, &report_data) {
         Ok(r) =>{
-            println!("Report creation => success");
+            println!("[-] Report creation => success");
             Some(r)
         },
         Err(e) =>{
-            println!("Report creation => failed {:?}", e);
+            println!("[-] Report creation => failed {:?}", e);
             None
         },
     };
@@ -384,15 +384,15 @@ pub fn create_attestation_report(sign_type: sgx_quote_sign_type_t, report_data: 
     }
 
     if rt != sgx_status_t::SGX_SUCCESS {
-        println!("ocall_get_quote returned {}", rt);
+        println!("[-] ocall_get_quote returned {}", rt);
         return Err(rt);
     }
 
     // Perform a check on qe_report to verify if the qe_report is valid
     match rsgx_verify_report(&qe_report) {
-        Ok(()) => println!("rsgx_verify_report passed!"),
+        Ok(()) => println!("[-] rsgx_verify_report passed!"),
         Err(x) => {
-            println!("rsgx_verify_report failed with {:?}", x);
+            println!("[-] rsgx_verify_report failed with {:?}", x);
             return Err(x);
         },
     }
@@ -401,11 +401,11 @@ pub fn create_attestation_report(sign_type: sgx_quote_sign_type_t, report_data: 
     if ti.mr_enclave.m != qe_report.body.mr_enclave.m ||
        ti.attributes.flags != qe_report.body.attributes.flags ||
        ti.attributes.xfrm  != qe_report.body.attributes.xfrm {
-        println!("qe_report does not match current target_info!");
+        println!("[-] qe_report does not match current target_info!");
         return Err(sgx_status_t::SGX_ERROR_UNEXPECTED);
     }
 
-    println!("qe_report check passed");
+    println!("[-] qe_report check passed");
 
     // Check qe_report to defend against replay attack
     // The purpose of p_qe_report is for the ISV enclave to confirm the QUOTE
@@ -421,7 +421,7 @@ pub fn create_attestation_report(sign_type: sgx_quote_sign_type_t, report_data: 
     let lhs_hash = &qe_report.body.report_data.d[..32];
 
     if rhs_hash != lhs_hash {
-        println!("Quote is tampered!");
+        println!("[-] Quote is tampered!");
         return Err(sgx_status_t::SGX_ERROR_UNEXPECTED);
     }
 
