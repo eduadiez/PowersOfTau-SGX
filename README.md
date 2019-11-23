@@ -15,10 +15,10 @@ This work is based on the perpetualpowersoftau from [here](https://github.com/we
 
 # Instructions
 
-1. [Check SGX compatibility](https://github.com/eduadiez/PowersOfTau-SGX#check-sgx-compatibility)  (If it isn't compatible you can only run you can only run it in simulation mode)
-2. [Check it SGX is enable](https://github.com/intel/sgx-software-enable)
+1. [Check SGX compatibility](https://github.com/eduadiez/PowersOfTau-SGX#check-sgx-compatibility)  (If it isn't compatible you can only run it in simulation mode)
+2. [Check if SGX is enable](https://github.com/intel/sgx-software-enable)
 3. Download the [binary]() and the [enclave]()
-4. Download the [challenge_nnnn](https://github.com/weijiekoh/perpetualpowersoftau) file from the coordinator . The filename might be something like challenge_0004. Rename it to challenge:
+4. Download the [challenge_nnnn](https://github.com/weijiekoh/perpetualpowersoftau) file from the coordinator. The filename might be something like challenge_0004. Rename it to challenge:
 ```
 mv challenge_nnnn challenge
 ```
@@ -55,7 +55,7 @@ You also get two more files `quote.json` and `quote.bin` you can validated follo
 
 As a summary, you can obtain proof signed by Intel that you have generated this response with its corresponding public key within the enclave and that it has been executed in a correct environment.
 
-You should follow https://github.com/weijiekoh/perpetualpowersoftau
+You should follow https://github.com/weijiekoh/perpetualpowersoftau steeps to sumit the response.
 
 # How to build it to verify the binary
 
@@ -67,7 +67,7 @@ $ cd PowersOfTau-SGX
 
 ## Build the docker image  
 ```
-$ docker build -t powersoftau docker
+$ docker build -t powersoftau docker/build
 ```
 
 ## Build the binary
@@ -126,10 +126,10 @@ $ cd bin && ./compute_constrained_sgx
 ## Intel
 ```
 curl -i -X POST \
->         https://api.trustedservices.intel.com/sgx/dev/attestation/v3/report \
->         -H 'Content-Type: application/json' \
->         -H 'Ocp-Apim-Subscription-Key: bc6ef22000ff41aca23ee0469c988821' \
->         -d @quote.json
+        https://api.trustedservices.intel.com/sgx/dev/attestation/v3/report \
+        -H 'Content-Type: application/json' \
+        -H 'Ocp-Apim-Subscription-Key: bc6ef22000ff41aca23ee0469c988821' \
+        -d @quote.json
 HTTP/1.1 100 Continue
 
 HTTP/1.1 200 OK
@@ -251,4 +251,81 @@ sgx 2 supported: 0
 MaxEnclaveSize_Not64: 1f
 MaxEnclaveSize_64: 24
 ...
+```
+
+# Try the 2^11 powers of tau version
+
+Since processing the 2^28 powers of tau takes around 24 hours and we've to download a 97G challange file, I have created a binary (debug mode; simulation and hardware modes) to be able to test it.
+
+To run it you must download this [file](https://github.com/eduadiez/PowersOfTau-SGX/releases/download/test_11/compute_constrained_sgx_11.tar.gz) or [SIM](https://github.com/eduadiez/PowersOfTau-SGX/releases/download/test_11/compute_constrained_sgx_11_SIM.tar.gz) version in case you don't have a Intel SGX compatible CPU.
+
+
+```
+$ wget https://github.com/eduadiez/PowersOfTau-SGX/releases/download/test_11/compute_constrained_sgx_11.tar.gz
+
+# SIM MODE 
+# $ wget https://github.com/eduadiez/PowersOfTau-SGX/releases/download/test_11/compute_constrained_sgx_11_SIM.tar.gz
+
+$ tar -zxvf compute_constrained_sgx_11.tar.gz
+
+$ docker run --device /dev/isgx --device /dev/mei0 -v $PWD/bin:/home/user/mesatee-sgx/code/build -ti powersoftau "./compute_constrained_sgx_11"
+
+# SIM MODE 
+# $ docker run -v $PWD/bin:/home/user/mesatee-sgx/code/build -ti powersoftau "./compute_constrained_sgx_11"
+
+aesm_service[38]: [ADMIN]White List update requested
+aesm_service[38]: [ADMIN]Platform Services initializing
+aesm_service[38]: [ADMIN]Platform Services initialization failed due to DAL error
+aesm_service[38]: The server sock is 0x5574bdfe3ef0
+SGX build enviroment
+[+] Init Enclave Successful 2!
+Will contribute to accumulator for 2^11 powers of tau
+In total will generate up to 4095 powers
+Calculating previous contribution hash...
+`challenge` file contains decompressed points and has a hash:
+        e778ddf5 7120714d 0a7a8841 13aac0db 
+        0c37dee0 d580dcb4 b3794fe5 b2b68875 
+        c32f0275 9a860990 bec44cbd 38a86fea 
+        abea62ea 9a0b682b 3c076003 c80042fd 
+`challenge` file claims (!!! Must not be blindly trusted) that it was based on the original contribution with a hash:
+        786a02f7 42015903 c6c6fd85 2552d272 
+        912f4740 e1584761 8a86e217 f71f5419 
+        d25e1031 afee5853 13896444 934eb04b 
+        903a685b 1448b755 d56f701a fe9be2ce 
+Type some random text and press [ENTER] to provide additional entropy...
+aesm_service[38]: [ADMIN]White list update request successful for Version: 65
+adasd
+[+] Entering ocall_sgx_init_quote...
+aesm_service[38]: [ADMIN]EPID Provisioning initiated
+aesm_service[38]: The Request ID is a370c654d8444081bd11909f68d6154d
+aesm_service[38]: The Request ID is daef856c48f74574a5ac30142284c95f
+aesm_service[38]: [ADMIN]EPID Provisioning successful
+[-] Report creation => success
+[+] Entering ocall_get_quote
+[-] rsgx_verify_report passed!
+[-] qe_report check passed
+Computing and writing your contribution, this could take a while...
+Done processing 2047 powers of tau
+Done processing 4094 powers of tau
+Finihsing writing your contribution to `./response`...
+Done!
+
+Your contribution has been written to `./response`
+
+The BLAKE2b hash of `./response` is:
+        bb246102 842c4e32 7266c580 e5b81a83 
+        b9a36939 58497722 5b50c336 07778939 
+        9a75809c 94195d4c 1274726b 60a1055d 
+        5b955b36 37c73609 b9b97df9 b22852e0 
+Thank you for your participation, much appreciated! :)
+[+] run_enclave success!
+```
+
+You can also validate the dev qoute generated (HW MODE):
+```
+curl -i -X POST \
+        https://api.trustedservices.intel.com/sgx/dev/attestation/v3/report \
+        -H 'Content-Type: application/json' \
+        -H 'Ocp-Apim-Subscription-Key: bc6ef22000ff41aca23ee0469c988821' \
+        -d @bin/quote.json
 ```
