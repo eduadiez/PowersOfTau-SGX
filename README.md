@@ -5,10 +5,10 @@ This work is based on the perpetualpowersoftau from [here](https://github.com/we
 - [x] Remove deprecated launch token
 - [ ] Add more comments to the modifications
 - [x] Make the build reproducible
-- [ ] Generate a release binary 
-- [ ] Sign the binary with an SGX license (0KIMS) to be able to run it on release mode
+- [x] Generate a release binary 
+- [x] Sign the binary with an SGX license (0KIMS) to be able to run it on release mode
 - [x] Generate an attestation proof inside the enclave (Intel SGX verificable)
-- [ ] Improve README.md and instructions
+- [x] Improve README.md and instructions
 - [ ] Write a verification tool
 - [x] Add SGX installation instructions
 - [ ] Write a Medium post explaining all the steps and implications
@@ -126,9 +126,9 @@ $ cd bin && ./compute_constrained_sgx
 ## Intel
 ```
 curl -i -X POST \
-        https://api.trustedservices.intel.com/sgx/dev/attestation/v3/report \
+        https://api.trustedservices.intel.com/sgx/attestation/v3/report \
         -H 'Content-Type: application/json' \
-        -H 'Ocp-Apim-Subscription-Key: bc6ef22000ff41aca23ee0469c988821' \
+        -H 'Ocp-Apim-Subscription-Key: 55aad22ed260486685fab7237d0c7915' \
         -d @quote.json
 HTTP/1.1 100 Continue
 
