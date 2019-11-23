@@ -17,12 +17,14 @@ This work is based on the perpetualpowersoftau from [here](https://github.com/we
 
 1. [Check SGX compatibility](https://github.com/eduadiez/PowersOfTau-SGX#check-sgx-compatibility)  (If it isn't compatible you can only run it in simulation mode)
 2. [Check if SGX is enable](https://github.com/intel/sgx-software-enable)
-3. Download the [binary]() and the [enclave]()
+3. Download the [binary](https://github.com/eduadiez/PowersOfTau-SGX/releases/download/1.0.0/compute_constrained_sgx) and the [enclave](https://github.com/eduadiez/PowersOfTau-SGX/releases/download/1.0.0/enclave.signed.so)
 4. Download the [challenge_nnnn](https://github.com/weijiekoh/perpetualpowersoftau) file from the coordinator. The filename might be something like challenge_0004. Rename it to challenge:
 ```
 mv challenge_nnnn challenge
 ```
-5. Run the computation with challenge in your working directory:
+5. Run the computation with challenge in your working directory: 
+
+(if you don't have the intel SGX driver installed you can run it on this way: https://github.com/eduadiez/PowersOfTau-SGX#inside-docker-hw-mode)
 ```
 ./compute_constrained_sgx
 ```
