@@ -109,6 +109,7 @@ RUN mkdir /home/user/sgx && \
     sudo dpkg -i /home/user/psw_dev.deb && \
     sudo dpkg -i /home/user/psw_dbgsym.deb && \
     echo 'source /opt/intel/sgxsdk/environment' >> /home/user/.bashrc && \
+    echo 'sudo LD_LIBRARY_PATH=/opt/intel/libsgx-enclave-common/aesm /opt/intel/libsgx-enclave-common/aesm/aesm_service &' >> /home/user/.bashrc && \
     rm -rf /home/user/sgx/*
 
 RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \ 
