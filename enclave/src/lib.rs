@@ -66,7 +66,8 @@ extern "C" {
 lazy_static!{
     static ref KEYSTORE: SgxMutex<Keystore<Bn256>> = SgxMutex::new(Keystore::<Bn256>::new());
 }
-static SPID: [u8; 16] = [131, 148, 124, 118, 73, 75, 241, 31, 177, 161, 82, 107, 137, 215, 90, 37]; // DEV: 83947C76494BF11FB1A1526B89D75A25
+static SPID_DEV: [u8; 16] = [131, 148, 124, 118, 73, 75, 241, 31, 177, 161, 82, 107, 137, 215, 90, 37]; // DEV: 83947C76494BF11FB1A1526B89D75A25
+static SPID: [u8; 16] = [224, 233, 24, 221, 188, 132, 146, 21, 104, 228, 3, 186, 208, 201, 252, 8];
 
 extern crate pairing;
 pub mod keystore;
