@@ -357,7 +357,7 @@ pub fn create_attestation_report(sign_type: sgx_quote_sign_type_t, report_data: 
     let quote_type = sign_type;
 
     let mut spid : sgx_spid_t = sgx_spid_t::default();
-    spid.id = SPID;
+    spid.id = SPID_DEV;
 
     let p_spid = &spid as *const sgx_spid_t;
     let p_nonce = &quote_nonce as * const sgx_quote_nonce_t;
