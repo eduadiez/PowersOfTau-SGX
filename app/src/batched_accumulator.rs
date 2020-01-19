@@ -916,6 +916,8 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                         {
                             let mut exp = *exp;
                             if let Some(coeff) = coeff {
+                                // ###########################################################
+                                // SGX: We run the mul_assign inside the enclave
                                 if let Some(eid) = eid {
                                     let mut retval = sgx_status_t::SGX_ERROR_OUT_OF_TCS;
                                     while retval == sgx_status_t::SGX_ERROR_OUT_OF_TCS {
@@ -929,7 +931,11 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                                         };
                                     }
                                 }
-                                //exp.mul_assign(coeff);
+                                // ###########################################################
+                                // Original code              
+                                // exp.mul_assign(coeff);
+                                // ###########################################################
+
                             }
 
                             *projective = wnaf.base(base.into_projective(), 1).scalar(exp.into_repr());
@@ -976,6 +982,8 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                 crossbeam::scope(|scope| {
                     for (i, taupowers) in taupowers.chunks_mut(chunk_size).enumerate() {
                         scope.spawn(move || {
+                            // ###########################################################
+                            // Original code
                             /*
                                 let mut acc = key.tau.pow(&[(start + i * chunk_size) as u64]);
 
@@ -984,7 +992,9 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                                     acc.mul_assign(&key.tau);
                                 }
                             */
-                            //println!("taupowers (chunk: {}, len: {}): {:?}",start + i * chunk_size,taupowers.len(),taupowers.as_mut_ptr());
+                            // ###########################################################
+                            // SGX: the key.tau.pow is cumputed inside the enclave and 
+                            // and also the mul_assign operations
                             let mut retval = sgx_status_t::SGX_ERROR_OUT_OF_TCS;
                             while retval == sgx_status_t::SGX_ERROR_OUT_OF_TCS {
                                 unsafe {
@@ -995,8 +1005,7 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                                     chunk_size)
                                 };
                             }
-                            //println!("taupowers (chunk: {}, len: {}): {:?}",start + i * chunk_size,taupowers.len(),taupowers);
-
+                            // ###########################################################
                         });
                     }
                 });
@@ -1005,13 +1014,19 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                 batch_exp::<E, _>(&mut accumulator.tau_powers_g2, &taupowers[0..], None, None);
                 batch_exp::<E, _>(&mut accumulator.alpha_tau_powers_g1, &taupowers[0..], Some(&ExpKey::KeyAlpha), Some(&eid));
                 batch_exp::<E, _>(&mut accumulator.beta_tau_powers_g1, &taupowers[0..], Some(&ExpKey::KeyBeta), Some(&eid));
-
+                // ###########################################################
+                // SGX: the beta_g2.mul ops are moved inside the enclave 
                 let mut retval = sgx_status_t::SGX_SUCCESS;
                 unsafe {
                     mul_beta(eid,
                     &mut retval,
                     &mut any_as_u8_slice(&mut accumulator.beta_g2)[0] as *mut u8);
                 };
+                // ###########################################################
+                // Original code
+                // accumulator.beta_g2 = accumulator.beta_g2.mul(key.beta).into_affine();
+                // ###########################################################
+
                 assert!(!accumulator.beta_g2.is_zero(), "your contribution happed to produce a point at infinity, please re-run");
                 accumulator.write_chunk(start, compress_the_output, output_map)?;
                 println!("Done processing {} powers of tau", end);
@@ -1035,6 +1050,8 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                 crossbeam::scope(|scope| {
                     for (i, taupowers) in taupowers.chunks_mut(chunk_size).enumerate() {
                         scope.spawn(move || {
+                            // ###########################################################
+                            // Original code
                             /*
                             let mut acc = key.tau.pow(&[(start + i * chunk_size) as u64]);
 
@@ -1043,6 +1060,9 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                                 acc.mul_assign(&key.tau);
                             }
                             */
+                            // ###########################################################
+                            // SGX: the key.tau.pow is cumputed inside the enclave and 
+                            // and also the mul_assign operations
                             let mut retval_2 = sgx_status_t::SGX_ERROR_OUT_OF_TCS;
                             while retval_2 == sgx_status_t::SGX_ERROR_OUT_OF_TCS {
                                 unsafe {
@@ -1053,15 +1073,16 @@ impl<E:Engine, P: PowersOfTauParameters> BachedAccumulator<E, P> {
                                     taupowers.len())
                                 };
                             }
+                            // ###########################################################
                         });
                     }
                 });
 
                 batch_exp::<E, _>(&mut accumulator.tau_powers_g1, &taupowers[0..], None, None);
-                
                 //accumulator.beta_g2 = accumulator.beta_g2.mul(key.beta).into_affine();
                 //assert!(!accumulator.beta_g2.is_zero(), "your contribution happed to produce a point at infinity, please re-run");
                 accumulator.write_chunk(start, compress_the_output, output_map)?;
+
                 println!("Done processing {} powers of tau", end);
             } else {
                 panic!("Chunk does not have a min and max");

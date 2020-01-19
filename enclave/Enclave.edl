@@ -40,7 +40,6 @@ enclave {
         public sgx_status_t init_keypair(
             [user_check] uint8_t *exp
         );
-        public sgx_status_t clean_keypair();
         public sgx_status_t construct_exponents(
             size_t exponent,
             [user_check] uint8_t *powertaus,

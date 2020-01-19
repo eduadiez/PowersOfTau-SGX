@@ -70,7 +70,6 @@ use bellman_ce::pairing::bn256::{G1Affine,G2Affine};
 
 extern {
     fn init_keypair(eid: sgx_enclave_id_t, retval: *mut sgx_status_t, digest: &u8) -> sgx_status_t;
-    fn clean_keypair(eid: sgx_enclave_id_t, retval: *mut sgx_status_t) -> sgx_status_t;
     fn get_public_key(eid: sgx_enclave_id_t, retval: *mut sgx_status_t, pubkey: &mut u8) -> sgx_status_t;
 }
 
@@ -165,6 +164,7 @@ fn init_enclave() -> SgxResult<SgxEnclave> {
 
 fn main() {
 
+    // Specific code for Intel SGX v
     let enclave = match init_enclave() {
         Ok(r) => {
             println!("[+] Init Enclave Successful {}!", r.geteid());
@@ -176,8 +176,55 @@ fn main() {
         },
     };
 
+    // ###########################################################
+    // Original code: https://github.com/kobigurk/phase2-bn254/blob/470dff3d9221b4393f50e5fcb82949ef8551e7a4/powersoftau/src/bin/compute_constrained.rs#L26
+    // ###########################################################
+
     println!("Will contribute to accumulator for 2^{} powers of tau", Bn256CeremonyParameters::REQUIRED_POWER);
     println!("In total will generate up to {} powers", Bn256CeremonyParameters::TAU_POWERS_G1_LENGTH);
+
+    // ###########################################################
+    // SGX: The RNG generation is moved to within the enclave
+    // Create an RNG based on a mixture of system randomness and user provided randomness
+    /*
+    let mut rng = {
+        use byteorder::{ReadBytesExt, BigEndian};
+        use blake2::{Blake2b, Digest};
+        use rand::{SeedableRng, Rng, OsRng};
+        use rand::chacha::ChaChaRng;
+
+        let h = {
+            let mut system_rng = OsRng::new().unwrap();
+            let mut h = Blake2b::default();
+
+            // Gather 1024 bytes of entropy from the system
+            for _ in 0..1024 {
+                let r: u8 = system_rng.gen();
+                h.input(&[r]);
+            }
+
+            // Ask the user to provide some information for additional entropy
+            let mut user_input = String::new();
+            println!("Type some random text and press [ENTER] to provide additional entropy...");
+            std::io::stdin().read_line(&mut user_input).expect("expected to read some random text from the user");
+
+            // Hash it all up to make a seed
+            h.input(&user_input.as_bytes());
+            h.result()
+        };
+
+        let mut digest = &h[..];
+
+        // Interpret the first 32 bytes of the digest as 8 32-bit words
+        let mut seed = [0u32; 8];
+        for i in 0..8 {
+            seed[i] = digest.read_u32::<BigEndian>().expect("digest is large enough for this to work");
+        }
+
+        ChaChaRng::from_seed(&seed)
+    };*/
+    // ###########################################################
+
 
     // Try to load `./challenge` from disk.
     let reader = OpenOptions::new()
@@ -224,7 +271,6 @@ fn main() {
     println!("Calculating previous contribution hash...");
 
     assert!(UseCompression::No == INPUT_IS_COMPRESSED, "Hashing the compressed file in not yet defined");
-
   
     let current_accumulator_hash = BachedAccumulator::<Bn256, Bn256CeremonyParameters>::calculate_hash(&readable_map);
   
@@ -264,9 +310,12 @@ fn main() {
         }
     }
 
+    // #################################################################################
+    // SGX: The construct of our keypair using the RNG is moved to within the enclave
     // Construct our keypair using the RNG we created above
-    //let (pubkey, privkey) = keypair(&mut rng, current_accumulator_hash.as_ref());
+    // let (pubkey, privkey) = keypair(&mut rng, current_accumulator_hash.as_ref());
 
+    // SGX: Initialize the keypair inside the enclave
     let mut retval = sgx_status_t::SGX_SUCCESS;
     let result = unsafe {
         init_keypair(
@@ -282,9 +331,13 @@ fn main() {
             return;
         }
     }
+    // #################################################################################
 
     // Perform the transformation
     println!("Computing and writing your contribution, this could take a while...");
+
+    // SGX: The prototype of the function is changed since now we don't have the privkey.
+    // Instead, the EID of the enclave is sent to be able to invoke it and operate with the private key
 
     // this computes a transformation and writes it
     BachedAccumulator::<Bn256, Bn256CeremonyParameters>::transform(
@@ -293,13 +346,12 @@ fn main() {
         INPUT_IS_COMPRESSED, 
         COMPRESS_THE_OUTPUT, 
         CHECK_INPUT_CORRECTNESS, 
-        enclave.geteid()
-        //&privkey
+        enclave.geteid() //&privkey
     ).expect("must transform with the key");
 
     println!("Finihsing writing your contribution to `./response`...");
 
-    let mut retval = sgx_status_t::SGX_SUCCESS;
+    // SGX: We get the `publicKey', at the moment we do this the private key is destroyed 
     let mut pubkey =  PublicKey::<Bn256> {
             tau_g1: (G1Affine::zero(),G1Affine::zero()),
             alpha_g1: (G1Affine::zero(),G1Affine::zero()),
@@ -308,25 +360,22 @@ fn main() {
             alpha_g2: G2Affine::zero(),
             beta_g2: G2Affine::zero(),
         };
-    unsafe fn any_as_u8_slice<T: Sized>(p: &mut T) -> &mut [u8] {
-            ::std::slice::from_raw_parts_mut(
-                (p as *mut T) as *mut u8,
-                ::std::mem::size_of::<T>(),
-            )
-    }
-    unsafe {
+    let mut retval = sgx_status_t::SGX_SUCCESS;
+    let result = unsafe {
         get_public_key(
             enclave.geteid(),
             &mut retval,
             &mut any_as_u8_slice(&mut pubkey)[0]
         )
     };
-    unsafe {
-        clean_keypair(
-            enclave.geteid(),
-            &mut retval
-        )
-    };
+
+    match result {
+        sgx_status_t::SGX_SUCCESS => {},
+        _ => {
+            println!("[-] ECALL get_public_key Failed {}!", result.as_str());
+            return;
+        }
+    }
    
     // Write the public key
     pubkey.write::<Bn256CeremonyParameters>(&mut writable_map, COMPRESS_THE_OUTPUT).expect("unable to write public key");
@@ -356,4 +405,11 @@ fn main() {
     println!("[+] run_enclave success!");
 
     enclave.destroy();
+}
+
+unsafe fn any_as_u8_slice<T: Sized>(p: &mut T) -> &mut [u8] {
+    ::std::slice::from_raw_parts_mut(
+        (p as *mut T) as *mut u8,
+        ::std::mem::size_of::<T>(),
+    )
 }

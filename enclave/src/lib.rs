@@ -65,8 +65,10 @@ extern "C" {
 
 lazy_static!{
     static ref KEYSTORE: SgxMutex<Keystore<Bn256>> = SgxMutex::new(Keystore::<Bn256>::new());
+    static ref DIGEST_HASH: SgxMutex<sgx_sha256_hash_t> = SgxMutex::new([0; 32]);
 }
-static SPID_DEV: [u8; 16] = [131, 148, 124, 118, 73, 75, 241, 31, 177, 161, 82, 107, 137, 215, 90, 37]; // DEV: 83947C76494BF11FB1A1526B89D75A25
+
+//static SPID: [u8; 16] = [131, 148, 124, 118, 73, 75, 241, 31, 177, 161, 82, 107, 137, 215, 90, 37]; // DEV: 83947C76494BF11FB1A1526B89D75A25
 static SPID: [u8; 16] = [224, 233, 24, 221, 188, 132, 146, 21, 104, 228, 3, 186, 208, 201, 252, 8];
 
 extern crate pairing;
@@ -107,6 +109,7 @@ pub enum ExpKey{
     KeyBeta,
 }
 
+// Keypar initialization
 #[no_mangle]
 pub extern "C" fn init_keypair(digest: &GenericArray<u8, U64>) -> sgx_status_t {
 
@@ -147,18 +150,22 @@ pub extern "C" fn init_keypair(digest: &GenericArray<u8, U64>) -> sgx_status_t {
         ChaChaRng::from_seed(&seed)
     };
 
+    let mut digest_hash = DIGEST_HASH.lock().unwrap();
+    *digest_hash = rsgx_sha256_slice(&hex::encode(&digest)[..].as_bytes()).unwrap();
+
     *ks = gen_keypair(&mut rng, &digest);
-    //*ks = gen_keypair_deterministic::<_, Bn256>(&mut rng, &digest);
     sgx_status_t::SGX_SUCCESS
 }
 
-#[no_mangle]
-pub extern "C" fn clean_keypair() -> sgx_status_t {
-    let mut ks = KEYSTORE.lock().unwrap();
-    *ks = Keystore::new();
-    sgx_status_t::SGX_SUCCESS
-}
+// This function es resposible of replace this code from batched_accumulator.rs:
+/*
+    let mut acc = key.tau.pow(&[(start + i * chunk_size) as u64]);
 
+    for t in taupowers {
+        *t = acc;
+        acc.mul_assign(&key.tau);
+    }
+*/
 #[no_mangle]
 pub extern "C" fn construct_exponents(exponent: usize, powersoftaus: *mut pairing::bn256::Fr, size: usize ) -> sgx_status_t {
     let ks = KEYSTORE.lock().unwrap();
@@ -172,7 +179,10 @@ pub extern "C" fn construct_exponents(exponent: usize, powersoftaus: *mut pairin
     sgx_status_t::SGX_SUCCESS    
 }
 
-
+// This function es resposible of replace this code from batched_accumulator.rs:
+/*
+    exp.mul_assign(coeff);
+*/
 #[no_mangle]
 pub extern "C" fn mul_assign(exp: &mut pairing::bn256::Fr, exp_type: &ExpKey ) -> sgx_status_t {
     let ks = KEYSTORE.lock().unwrap();
@@ -183,6 +193,10 @@ pub extern "C" fn mul_assign(exp: &mut pairing::bn256::Fr, exp_type: &ExpKey ) -
     sgx_status_t::SGX_SUCCESS    
 }
 
+// This function replace this code from batched_accumulator.rs:
+/*
+    accumulator.beta_g2 = accumulator.beta_g2.mul(key.beta).into_affine();
+*/
 #[no_mangle]
 pub extern "C" fn mul_beta(beta_g2: &mut <pairing::bn256::Bn256 as Engine>::G2Affine ) -> sgx_status_t {
     let ks = KEYSTORE.lock().unwrap();
@@ -192,9 +206,50 @@ pub extern "C" fn mul_beta(beta_g2: &mut <pairing::bn256::Bn256 as Engine>::G2Af
 
 #[no_mangle]
 pub extern "C" fn get_public_key(pubkey: &mut PublicKey<Bn256>) -> sgx_status_t {
-    let ks = KEYSTORE.lock().unwrap();
+    let mut ks = KEYSTORE.lock().unwrap();
     *pubkey = (*ks).public_key;
-    sgx_status_t::SGX_SUCCESS
+    // At the moment you get the public key, 
+    // the private key and the public key are destroyed, 
+    // this function is called at the end of the process
+
+    // Generate the attestation proof
+      let pbk_slice = [
+        (pubkey.tau_g1).0.into_uncompressed().as_ref(),
+        (pubkey.tau_g1).1.into_uncompressed().as_ref(),
+        (pubkey.alpha_g1).0.into_uncompressed().as_ref(),
+        (pubkey.alpha_g1).1.into_uncompressed().as_ref(),
+        (pubkey.beta_g1).0.into_uncompressed().as_ref(),
+        (pubkey.beta_g1).1.into_uncompressed().as_ref(),
+        (pubkey.tau_g2).into_uncompressed().as_ref(),   
+        (pubkey.alpha_g2).into_uncompressed().as_ref(),
+        (pubkey.beta_g2).into_uncompressed().as_ref(),
+        ].concat();
+    
+    let pbk_slice_hash = rsgx_sha256_slice(&hex::encode(&pbk_slice)[..].as_bytes()).unwrap();
+    
+    match DIGEST_HASH.lock() 
+    {
+        Ok(digest_hash) => {
+            let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
+            report_data.d[..32].clone_from_slice(&pbk_slice_hash);
+            report_data.d[32..].clone_from_slice(&*digest_hash);
+        
+            let sign_type = sgx_quote_sign_type_t::SGX_UNLINKABLE_SIGNATURE;
+            match create_attestation_report(sign_type, report_data) {
+                Ok(r) => r,
+                Err(e) => {
+                    println!("Error in create_attestation_report: {:?}", e);
+                    return sgx_status_t::SGX_ERROR_UNEXPECTED;
+                }
+            };
+        
+            *ks = Keystore::new();
+            sgx_status_t::SGX_SUCCESS
+        }
+        Err(_) => panic!("llvm_gcda_end_file failed!"),
+    }
+
+
 }
 
 
@@ -238,35 +293,6 @@ fn gen_keypair<R: Rng, E: Engine>(rng: &mut R, digest: &[u8]) -> Keystore::<E> {
     let pk_tau = op(tau, 0);
     let pk_alpha = op(alpha, 1);
     let pk_beta = op(beta, 2);
-
-
-    // Generate the attestation proof
-    let pbk_slice = [
-        (pk_tau.0).0.into_uncompressed().as_ref(),
-        (pk_tau.0).1.into_uncompressed().as_ref(),
-        (pk_alpha.0).0.into_uncompressed().as_ref(),
-        (pk_alpha.0).1.into_uncompressed().as_ref(),
-        (pk_beta.0).0.into_uncompressed().as_ref(),
-        (pk_beta.0).1.into_uncompressed().as_ref(),
-        (pk_tau.1).into_uncompressed().as_ref(),   
-        (pk_alpha.1).into_uncompressed().as_ref(),
-        (pk_beta.1).into_uncompressed().as_ref(),
-        ].concat();
-    
-    let pbk_slice_hash = rsgx_sha256_slice(&hex::encode(&pbk_slice)[..].as_bytes()).unwrap();
-    let digest_hash = rsgx_sha256_slice(&hex::encode(&digest)[..].as_bytes()).unwrap();
-    let mut report_data: sgx_report_data_t = sgx_report_data_t::default();
-    report_data.d[..32].clone_from_slice(&pbk_slice_hash);
-    report_data.d[32..].clone_from_slice(&digest_hash);
-
-    let sign_type = sgx_quote_sign_type_t::SGX_UNLINKABLE_SIGNATURE;
-    match create_attestation_report(sign_type, report_data) {
-        Ok(r) => r,
-        Err(e) => {
-            println!("Error in create_attestation_report: {:?}", e);
-            return Keystore::new();
-        }
-    };
 
     Keystore{
         public_key: PublicKey {
