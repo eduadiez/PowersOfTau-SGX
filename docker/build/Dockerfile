@@ -1,14 +1,17 @@
 FROM ubuntu:18.04@sha256:6e9f67fa63b0323e9a1e587fd71c561ba48a034504fb804fd26fd8800039835d
 
-ENV MESATEE_SGX_COMMIT 2042ce64fd377e790584c96a4bfd4c32de2d03ea
-ENV RUST_VERSION nightly-2019-08-01
-ENV SGX_TAG sgx_2.6
-ENV SGX_BIN sgx_linux_x64_sdk_2.6.100.51363.bin
+ENV MESATEE_SGX_COMMIT 5929e2fa2cd247bf29640d6353e2bc79d4bc87f1
+ENV RUST_VERSION nightly-2019-11-25
+ENV SGX_TAG sgx_2.7.1
+ENV SGX_BIN sgx_linux_x64_sdk_2.7.101.3.bin
 ENV DEBIAN_FRONTEND=noninteractive
 
+ENV psw_deb https://download.01.org/intel-sgx/sgx-linux/2.7.1/distro/ubuntu18.04-server/libsgx-enclave-common_2.7.101.3-bionic1_amd64.deb
+ENV psw_dev_deb https://download.01.org/intel-sgx/sgx-linux/2.7.1/distro/ubuntu18.04-server/libsgx-enclave-common-dev_2.7.101.3-bionic1_amd64.deb
+ENV psw_dbgsym_deb https://download.01.org/intel-sgx/sgx-linux/2.7.1/distro/ubuntu18.04-server/libsgx-enclave-common-dbgsym_2.7.101.3-bionic1_amd64.ddeb
+
 RUN apt-get update \
-        && apt-get install -y curl python git build-essential wget sudo \
-        && apt-get install -y ocaml ocamlbuild automake autoconf libtool libssl-dev libcurl4-openssl-dev protobuf-compiler libprotobuf-dev kmod vim curl git-core libprotobuf-c0-dev libboost-thread-dev libboost-system-dev liblog4cpp5-dev libjsoncpp-dev alien uuid-dev libxml2-dev cmake pkg-config expect systemd-sysv gdb \
+        && apt-get install -y curl git wget sudo nano xz-utils python  \
         && mkdir -p /nix /etc/nix \
         && chmod a+rwx /nix \
         && echo 'sandbox = false' > /etc/nix/nix.conf \
@@ -22,16 +25,11 @@ USER user
 ENV USER user
 WORKDIR /home/user
 
-RUN git clone -b ${SGX_TAG} https://github.com/intel/linux-sgx.git /home/user/linux-sgx && \
-	cd /home/user/linux-sgx && \
-	make dcap_source && \
-	./download_prebuilt.sh
-
 #create the shell config
 RUN echo "{ pkgs ? import <nixpkgs> {} }: \n\
 with pkgs; \n\
 \n\
-stdenv.mkDerivation { \n\
+gcc7Stdenv.mkDerivation { \n\
 \tname = \"sgx-build-nix\"; \n\
 \tbuildInputs = [ \n\
 \t\t/nix/store/raiq8qv61rc66arg3vzyfr9kw83s7dwv-autoconf-2.69 \n\
@@ -40,7 +38,7 @@ stdenv.mkDerivation { \n\
 \t\t/nix/store/68yb6ams241kf5pjyxiwd7a98xxcbx0r-ocaml-4.06.1 \n\
 \t\t/nix/store/ncqmw9iybd6iwxd4yk1x57gvs76k1sq4-ocamlbuild-0.12.0 \n\
 \t\t/nix/store/9dkhfaw1qsmvw4rv1z1fqgwhfpbdqrn0-file-5.35 \n\
-\t\t/nix/store/lw4xr0x2p6xyfgbk961lxh8vnnx7vn2r-cmake-3.12.1 \n\
+\t\t/nix/store/xg29vpnqlg5xigdpv4g7i5p9cn9b4nw2-cmake-3.16.2 \n\
 \t\t/nix/store/d0fv0g4vcv4s0ysa81pn9sf6fy4zzjcv-gnum4-1.4.18 \n\
 \t\t/nix/store/pm4rg0bdiaj5b748kncp9vf7n3x446sd-gcc-7.4.0 \n\
 \t\t/nix/store/ljvpvjh36h9x2aaqzaby5clclq4mgdmc-openssl-1.1.1b \n\
@@ -63,7 +61,7 @@ stdenv.mkDerivation { \n\
 
 #install the required software
 RUN touch .bash_profile \
-&& curl https://nixos.org/releases/nix/nix-2.2.1/install | sh \
+&& curl https://nixos.org/releases/nix/nix-2.3.2/install | sh \
 && . /home/user/.nix-profile/etc/profile.d/nix.sh \
 && nix-env -i /nix/store/1kl6ms8x56iyhylb2r83lq7j3jbnix7w-binutils-2.31.1 \
 && nix-env -i /nix/store/raiq8qv61rc66arg3vzyfr9kw83s7dwv-autoconf-2.69 \
@@ -72,7 +70,7 @@ RUN touch .bash_profile \
 && nix-env -i /nix/store/68yb6ams241kf5pjyxiwd7a98xxcbx0r-ocaml-4.06.1 \
 && nix-env -i /nix/store/ncqmw9iybd6iwxd4yk1x57gvs76k1sq4-ocamlbuild-0.12.0 \
 && nix-env -i /nix/store/9dkhfaw1qsmvw4rv1z1fqgwhfpbdqrn0-file-5.35 \
-&& nix-env -i /nix/store/lw4xr0x2p6xyfgbk961lxh8vnnx7vn2r-cmake-3.12.1 \
+&& nix-env -i /nix/store/xg29vpnqlg5xigdpv4g7i5p9cn9b4nw2-cmake-3.16.2 \
 && nix-env -i /nix/store/d0fv0g4vcv4s0ysa81pn9sf6fy4zzjcv-gnum4-1.4.18 \
 && nix-env -i /nix/store/pm4rg0bdiaj5b748kncp9vf7n3x446sd-gcc-7.4.0 \
 && nix-env -i /nix/store/ljvpvjh36h9x2aaqzaby5clclq4mgdmc-openssl-1.1.1b \
@@ -88,17 +86,18 @@ RUN touch .bash_profile \
 RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \
 && nix-shell
 
+RUN git clone -b ${SGX_TAG} https://github.com/intel/linux-sgx.git /home/user/linux-sgx
+
 RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \ 
         && nix-shell shell.nix --command " \
+        cd /home/user/linux-sgx && \
+	make dcap_source && \
+	./download_prebuilt.sh && \
         cd /home/user/linux-sgx/sdk && \
         make && \
         /home/user/linux-sgx/linux/installer/bin/build-installpkg.sh sdk && \
-        sudo /home/user/linux-sgx/linux/installer/bin/${SGX_BIN} --prefix=/opt/intel"
-
-ENV psw_deb https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server/libsgx-enclave-common_2.6.100.51363-bionic1_amd64.deb
-ENV psw_dev_deb https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server/libsgx-enclave-common-dev_2.6.100.51363-bionic1_amd64.deb
-ENV psw_dbgsym_deb https://download.01.org/intel-sgx/linux-2.6/ubuntu18.04-server/libsgx-enclave-common-dbgsym_2.6.100.51363-bionic1_amd64.ddeb
-
+        sudo PATH=$PATH:/nix/store/7rrhnhca34zq420nsinggp48p1bx8awr-gnumake-4.2.1/bin/make /home/user/linux-sgx/linux/installer/bin/${SGX_BIN} --prefix=/opt/intel"
+RUN sudo apt update && sudo apt install libprotobuf10
 RUN mkdir /home/user/sgx && \
     sudo mkdir /etc/init && \
     wget -O /home/user/psw.deb ${psw_deb} && \
@@ -108,8 +107,6 @@ RUN mkdir /home/user/sgx && \
     sudo dpkg -i /home/user/psw.deb && \
     sudo dpkg -i /home/user/psw_dev.deb && \
     sudo dpkg -i /home/user/psw_dbgsym.deb && \
-    echo 'source /opt/intel/sgxsdk/environment' >> /home/user/.bashrc && \
-    echo 'sudo LD_LIBRARY_PATH=/opt/intel/libsgx-enclave-common/aesm /opt/intel/libsgx-enclave-common/aesm/aesm_service &' >> /home/user/.bashrc && \
     rm -rf /home/user/sgx/*
 
 RUN . /home/user/.nix-profile/etc/profile.d/nix.sh \ 
