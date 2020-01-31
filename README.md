@@ -3,7 +3,7 @@
 This work is based on the Perpetual Powers of Tau from [here](https://github.com/weijiekoh/perpetualpowersoftau) and this [code](https://github.com/kobigurk/phase2-bn254/tree/ppot_ceremony) from [Kobi Gurkan](https://github.com/kobigurk)
 
 Index:
-  * Instructions
+  * Instructions (Ubuntu)
   * Pre-requisites
   * Generating a production ready contribution (HWMODE - 2^28 powers of tau)
   * Tested Hardware
@@ -11,19 +11,15 @@ Index:
   * Generating a test contribution (HWMODE/SWMODE - 2^11 powers of tau)
   * How to build and verify the binary
 
-
-
 ## Instructions (Ubuntu)
 
-__This guide is still on WIP any suggestion or comment is really appreciated__  
+***Note 1**: This guide is still a WIP, any suggestions or comments are really appreciated*  
 
-*__Note__: These instructions are based on the use Docker although it is possible to do it without it. If you want to know who to do it you can send me an email to edu@dappnode.io*
+***Note 2**: The process described here includes the use of Docker for convenience although it is possible to generate a contribution through this method without using it. If you would like instructions on do it you can send me an email to edu@dappnode.io*
 
 ## Pre-requisites
 
-  * Docker
-
-      If you don't have docker installed on your system you need to follow this [instructions](https://docs.docker.com/install/linux/docker-ce/ubuntu/)
+  * Docker. If you don't have docker installed on your system you need to follow this [instructions](https://docs.docker.com/install/linux/docker-ce/ubuntu/).
 
   * Check SGX compatibility and enable it
 
@@ -54,7 +50,7 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
     "OK"
     ```
 
-    If you don't get an __"OK"__ response you need to check the troubleshooting guide
+    If you don't get an __"OK"__ response please refer to the troubleshooting guide below.
 
 
 ## Generating a production ready contribution (HWMODE - 2^28 powers of tau )
@@ -65,7 +61,7 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
     $ wget https://github.com/eduadiez/PowersOfTau-SGX/releases/download/1.0.0/compute_constrained_sgx
     $ wget https://github.com/eduadiez/PowersOfTau-SGX/releases/download/1.0.0/enclave.signed.so
     ```
-2. Download the [challenge_nnnn](https://github.com/weijiekoh/perpetualpowersoftau) file from the coordinator (you need to have an slot). The filename might be something like challenge_0004. Rename it to challenge:
+2. Download the [challenge_nnnn](https://github.com/weijiekoh/perpetualpowersoftau) file from the ceremony coordinator (you will need to have a slot assigned). The filename might be something like challenge_0004. Rename it to challenge:
     ```
     $ mv challenge_nnnn challenge
     ```
@@ -83,7 +79,7 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
     ```
     Make sure that it says 2^28 powers of tau, and then enter random text as prompted.
 
-    The compuation will run for about 24 hours on a fast machine. Please try your best to avoid electronic surveillance or tampering during this time.
+    The compuation will run for about 24 hours on a fast machine. Please try your best to avoid electronic surveillance or tampering during this time. If possible, leave the machine offline. 
 
     When it is done, you will see something like this:
     ```
@@ -100,20 +96,21 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
     Thank you for your participation, much appreciated! :)
     ```
 4. Checking and validating the results
-    The result of the execution will generate the following files
-      * response
 
-          49GB file with the result of the computation. You should follow https://github.com/weijiekoh/perpetualpowersoftau steeps to sumit the response.
-      * quote.json 
+    The result of the execution will generate the following files
+      * _response_
+
+          49GB file with the result of the computation. You should follow [these steps (link)](https://github.com/weijiekoh/perpetualpowersoftau) to sumit the response.
+      * _quote.json_ 
 
           Quote in json format to use for validating the result with the Intel Atesttation services
-      * quote.bin
+      * _quote.bin_
 
           Quote in binary format to use with the parse_quote.py
 
-      With the quote files you can obtain a proof signed by Intel that you have generated this response with its corresponding public key within the enclave and that it has been executed in a correct environment.
+      With the quote files you can use Intel's Attestation Services to obtain a proof signed by Intel that you have generated this response with its corresponding public key within the enclave and that it has been executed in the correct environment.
 
-    __Get Intel Attestation proof:__
+    __Get an Intel Attestation proof:__
     ```
     $ curl -i -X POST \
     >         https://api.trustedservices.intel.com/sgx/attestation/v3/report \
@@ -133,7 +130,7 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
     {"id":"87128901495989080043954525461315810896","timestamp":"2020-01-30T11:00:39.307778","version":3,"isvEnclaveQuoteStatus":"OK","isvEnclaveQuoteBody":"AgAAAIYLAAAKAAkAAAAAAODpGN28hJIVaOQDutDJ/Ah17UYs7+opWcNky9jY4V16AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABQAAAAAAAAADAAAAAAAAAFezT7RffLAzldx+6OtJPKYG0p1OtHfZ92R5aJyM/rvqAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAw56oBvWVB3AC6ZGkHrQLUnWvkTcvZllW8HAzyCD0ZOgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAC9/XWWRh64ji3oG5Bx3J8jX33ExQkpMJhutfOjzaxfTAR1fRt1sRSWNBRrBauzj655gRAkNpHhynhAe9mjB0fi"}
     ```
 
-    As you can see I get a `"isvEnclaveQuoteStatus":"OK"` which validates the result of the `isvEnclaveQuoteBody`. On the other hand Intel signs the response obtained with the `X-IASReport-Signature` and `X-IASReport-Signing-Certificate` headers.
+    As you can see in the response we get a `"isvEnclaveQuoteStatus":"OK"` which validates the result of the `isvEnclaveQuoteBody`. On the other hand Intel signs the response obtained with the `X-IASReport-Signature` and `X-IASReport-Signing-Certificate` headers.
 
     __Verifying the quote and the response:__
 
@@ -176,14 +173,14 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
 
     ```
 
-    You need to verify that you get this `mr_enclave` and `mr_signer`, if you get other results you have NOT used the application signed by 0KIMS since these values identify the enclave and who signs it
+    Please verify that the values `mr_enclave` and `mr_signer` are the same as listed below. If you get other values you have NOT used the application signed by 0KIMS since these values identify the enclave and who signs it.
 
     ```
       mr_enclave	57b34fb45f7cb03395dc7ee8eb493ca606d29d4eb477d9f76479689c8cfebbea
       mr_signer	  30e7aa01bd6541dc00ba646907ad02d49d6be44dcbd99655bc1c0cf2083d193a
     ```
     
-    On the other hand the first part of the `report_data` must be equal to the hash of the public key used to generate the parameters and the second part its sha256 hash of the challange used to generate it
+    On the other hand, the first part of the `report_data` must be equal to the hash of the public key used to generate the parameters. The second part must be the sha256 hash of the challange used to generate it
 
     ```
     report_data	        bdfd7596461eb88e2de81b9071dc9f235f7dc4c5092930986eb5f3a3cdac5f4c04757d1b75b1149634146b05abb38fae798110243691e1ca78407bd9a30747e2
@@ -210,7 +207,7 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
 
     * GROUP_OUT_OF_DATE
 
-      This usually means that you don't have the latest BIOS on your system. To be able to get an OK response from the Intel Attestation services you need to have installed the latest version from the manufacturer of your device.
+      This usually means that you don't have the latest BIOS on your system. To be able to get an OK response from the Intel Attestation services you need to install the latest version from the manufacturer of your device.
    
       You can get more info about the reaseon if you check the Advisory-IDs on the [Intel Security Center](https://www.intel.com/content/www/us/en/security-center/default.html)
 
@@ -218,9 +215,36 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
       Advisory-IDs: INTEL-SA-00220,INTEL-SA-00270,INTEL-SA-00293
       ```
 
+## Generating a test contribution (HWMODE/SWMODE - 2^11 powers of tau)
+
+Since processing the 2^28 powers of tau takes around 24 hours and it requires the download of a 97G challange file, I have created a binary (debug mode; simulation and hardware modes) to test it using less resources. 
+
+To run it you must download this [file](https://github.com/eduadiez/PowersOfTau-SGX/releases/download/test_11/compute_constrained_sgx_11.tar.gz)
+
+```
+$ wget https://github.com/eduadiez/PowersOfTau-SGX/releases/download/test_11/compute_constrained_sgx_11.tar.gz
+$ tar -zxvf compute_constrained_sgx_11.tar.gz && cd compute_constrained_sgx_11
+```
+ * HW Mode
+```
+$ docker run --device /dev/isgx --device /dev/mei0 -v $PWD/bin_11:/home/user/mesatee-sgx/code/build -ti eduadiez/sgx-runtime "./compute_constrained_sgx"
+```
+
+```
+$ curl -i -X POST \
+        https://api.trustedservices.intel.com/sgx/dev/attestation/v3/report \
+        -H 'Content-Type: application/json' \
+        -H 'Ocp-Apim-Subscription-Key: bc6ef22000ff41aca23ee0469c988821' \
+        -d @bin_11/quote.json
+```
+ * SIM Mode 
+```
+$ docker run -v $PWD/bin_sim:/home/user/mesatee-sgx/code/build -ti eduadiez/sgx-runtime "./compute_constrained_sgx"
+```
+
 ## How to build and verify the binary
 
-  * Clon the repo
+  * Clone the repo
   ```
   $ git clone https://github.com/eduadiez/PowersOfTau-SGX.git
   $ cd PowersOfTau-SGX
@@ -237,7 +261,7 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
       $ chmod a+w -R .
       $ docker run --rm -ti -v $PWD:/home/user/mesatee-sgx/code/build eduadiez/powersoftau make
       ```
-    * SW Mode (Only for testing or in case you don't have an Intel SGX enable machine)
+    * SW Mode (Only for testing or in case you don't have an Intel SGX-enabled machine)
       ```
       $ chmod a+w -R .
       $ docker run --rm -ti -v $PWD:/home/user/mesatee-sgx/code/build eduadiez/powersoftau SGX_MODE=SW make
@@ -251,7 +275,7 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
       e67d835416b617d6d214b7c8fe6ebc8a  bin/enclave.signed.so
       ```
 
-      The enclave.signed.so md5sum is different from the release version since that is signed with the 0Kims private key, that's why we should verify the enclave hash.
+      The enclave.signed.so md5sum is different from the release version since release is signed with the 0Kims private key: For the test we should verify the enclave hash as follows:
 
       ```
       $ docker run --rm -ti -v $PWD:/home/user/mesatee-sgx/code/build eduadiez/powersoftau sgx_sign dump -enclave bin/enclave.signed.so -dumpfile bin/metadata_info.txt
@@ -311,36 +335,5 @@ __This guide is still on WIP any suggestion or comment is really appreciated__
 
     ```
 
-The ENCLAVEHASH should be match with metadata->enclave_css.body.enclave_hash.m
+The `ENCLAVEHASH` should be match with `metadata->enclave_css.body.enclave_hash.m`
 
-# Clean the results:
-```
-$ docker run --rm -ti -v $PWD:/home/user/mesatee-sgx/code/build eduadiez/powersoftau make clean
-```
-
-# Try the 2^11 powers of tau version
-
-Since processing the 2^28 powers of tau takes around 24 hours and we've to download a 97G challange file, I have created a binary (debug mode; simulation and hardware modes) to be able to test it.
-
-To run it you must download this [file](https://github.com/eduadiez/PowersOfTau-SGX/releases/download/test_11/compute_constrained_sgx_11.tar.gz)
-
-```
-$ wget https://github.com/eduadiez/PowersOfTau-SGX/releases/download/test_11/compute_constrained_sgx_11.tar.gz
-$ tar -zxvf compute_constrained_sgx_11.tar.gz && cd compute_constrained_sgx_11
-```
- * HW Mode
-```
-$ docker run --device /dev/isgx --device /dev/mei0 -v $PWD/bin_11:/home/user/mesatee-sgx/code/build -ti eduadiez/sgx-runtime "./compute_constrained_sgx"
-```
-
-```
-$ curl -i -X POST \
-        https://api.trustedservices.intel.com/sgx/dev/attestation/v3/report \
-        -H 'Content-Type: application/json' \
-        -H 'Ocp-Apim-Subscription-Key: bc6ef22000ff41aca23ee0469c988821' \
-        -d @bin_11/quote.json
-```
- * SIM Mode 
-```
-$ docker run -v $PWD/bin_sim:/home/user/mesatee-sgx/code/build -ti eduadiez/sgx-runtime "./compute_constrained_sgx"
-```
